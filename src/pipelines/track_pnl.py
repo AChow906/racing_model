@@ -181,7 +181,16 @@ def compute_top_picks_pnl(picks: pd.DataFrame, results: pd.DataFrame) -> pd.Data
 
     merged = _merge_with_results(picks, results)
 
-    merged["profit"] = merged.apply(
+    def _tp_profit(r: pd.Series, odds_col: str) -> float:
+        if not r["settled"]:
+            return 0.0
+        odds = r[odds_col]
+        if pd.isna(odds) or odds <= 0:
+            odds = r["sp"]
+        return _settle_profit(odds, r["won_actual"], r["stake"])
+
+    merged["profit"] = merged.apply(lambda r: _tp_profit(r, "back"), axis=1)
+    merged["profit_bsp"] = merged.apply(
         lambda r: _settle_profit(r["sp"], r["won_actual"], r["stake"]) if r["settled"] else 0.0,
         axis=1,
     )
@@ -198,20 +207,24 @@ def _print_category_summary(settled: pd.DataFrame, label: str, indent: int = 0) 
     profit_bsp = settled["profit_bsp"].sum()
     roi = profit / staked * 100 if staked > 0 else 0
     roi_bsp = profit_bsp / staked * 100 if staked > 0 else 0
-    prefix = " " * indent
-    print(f"  {prefix}{label:<10} Bets: {len(settled):<5} |  "
-          f"P&L: {profit:+.2f}u (ROI {roi:+.1f}%)  |  BSP: {profit_bsp:+.2f}u (ROI {roi_bsp:+.1f}%)")
+    padded = f"{' ' * indent}{label}"
+    print(f"  {padded:<12} Bets: {len(settled):<5} |  "
+          f"P&L: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
+          f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
 
 
 def _print_tp_category_summary(settled: pd.DataFrame, label: str, indent: int = 0) -> None:
     staked = settled["stake"].sum()
     profit = settled["profit"].sum()
+    profit_bsp = settled["profit_bsp"].sum()
     roi = profit / staked * 100 if staked > 0 else 0
+    roi_bsp = profit_bsp / staked * 100 if staked > 0 else 0
     winners = int(settled["won_actual"].sum())
     sr = winners / len(settled) * 100 if len(settled) > 0 else 0
-    prefix = " " * indent
-    print(f"  {prefix}{label:<10} Picks: {len(settled):<5} W: {winners:<4} SR: {sr:.0f}%  |  "
-          f"P&L: {profit:+.2f}u (ROI {roi:+.1f}%)")
+    padded = f"{' ' * indent}{label}"
+    print(f"  {padded:<12} Picks: {len(settled):<5} W: {winners:<4} SR: {sr:3.0f}%  |  "
+          f"Back: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
+          f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
 
 
 def _range_label(date_from: date | None, date_to: date | None) -> str:
@@ -300,23 +313,25 @@ def print_top_picks_single_day(pnl: pd.DataFrame, target_date: date) -> None:
 
     for cat in sorted(settled["category"].dropna().unique()):
         cat_settled = settled[settled["category"] == cat]
-        print(f"  {'-'*55}")
+        print(f"  {'-'*70}")
         print(f"  {cat.upper()}")
-        print(f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'SP':>6} {'W':>3} {'P&L':>8}")
-        print(f"  {'-'*55}")
+        print(f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'Back':>5} {'SP':>6} {'W':>3} {'Back':>8} {'BSP':>8}")
+        print(f"  {'-'*70}")
 
         for _, r in cat_settled.sort_values("time").iterrows():
             horse = str(r.get("horse", "?"))[:21]
             course = str(r.get("course", ""))[:11]
             time_str = str(r.get("time", ""))[:5]
+            back = f"{r['back']:.1f}" if pd.notna(r.get("back")) and r.get("back", 0) > 0 else "-"
             sp = f"{r['sp']:.1f}" if r["sp"] > 0 else "-"
             won_str = "Y" if r["won_actual"] else ""
-            pnl_str = f"{r['profit']:+.2f}"
-            print(f"  {horse:<22} {course:<12} {time_str:<6} {sp:>6} {won_str:>3} {pnl_str:>8}")
+            pnl_back_str = f"{r['profit']:+.2f}"
+            pnl_bsp_str = f"{r['profit_bsp']:+.2f}"
+            print(f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_back_str:>8} {pnl_bsp_str:>8}")
 
         _print_tp_category_summary(cat_settled, cat.upper())
 
-    print(f"  {'='*55}")
+    print(f"  {'='*70}")
     _print_tp_category_summary(settled, "TOTAL")
 
 
@@ -428,13 +443,13 @@ def main() -> None:
         if not tp_pnl.empty and tp_pnl["settled"].any():
             has_any_settled = True
             print(f"\n  {'='*70}")
-            print(f"  TOP PICKS  (model #1 per race, settled at BSP)")
+            print(f"  TOP PICKS  (model #1 per race)")
             print(f"  {'='*70}")
             if single_day:
                 print_top_picks_single_day(tp_pnl, date_from)
             else:
                 print_top_picks_range(tp_pnl, date_from, date_to)
-                _write_daily_tracker(tp_pnl[tp_pnl["settled"]].copy(), TOP_PICKS_PNL_OUTPUT, has_bsp=False)
+                _write_daily_tracker(tp_pnl[tp_pnl["settled"]].copy(), TOP_PICKS_PNL_OUTPUT, has_bsp=True)
 
     if not has_any_settled:
         print("No settled bets or picks yet. Run collect_results to fetch actual SPs.")
