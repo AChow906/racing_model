@@ -183,6 +183,7 @@ def enrich_from_racecards(
                 runner_updates.append({
                     "runner_id": runner_id,
                     "sex": rc_runner.get("sex_code"),
+                    "forecast_odds": rc_runner.get("forecast_odds"),
                 })
 
     summary = {
@@ -225,14 +226,16 @@ def enrich_from_racecards(
         if runner_updates:
             runner_frame = pd.DataFrame(runner_updates).drop_duplicates(subset=["runner_id"])
             con.register("tmp_rc_runner_updates", runner_frame)
-            try:
-                con.execute("ALTER TABLE runners ADD COLUMN sex VARCHAR")
-            except Exception:
-                pass
+            for col, dtype in [("sex", "VARCHAR"), ("forecast_odds", "DOUBLE")]:
+                try:
+                    con.execute(f"ALTER TABLE runners ADD COLUMN {col} {dtype}")
+                except Exception:
+                    pass
             con.execute(
                 """
                 UPDATE runners
-                SET sex = COALESCE(tmp.sex, runners.sex)
+                SET sex = COALESCE(tmp.sex, runners.sex),
+                    forecast_odds = COALESCE(tmp.forecast_odds, runners.forecast_odds)
                 FROM tmp_rc_runner_updates tmp
                 WHERE runners.runner_id = tmp.runner_id
                 """

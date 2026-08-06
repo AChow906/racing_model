@@ -8,13 +8,43 @@ cheap and never risks a circular import.
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+from fractions import Fraction
 from pathlib import Path
 
 import pandas as pd
 
+_RACING_FRACTIONS = [
+    (0.1, "1/10"), (0.2, "1/5"), (0.222, "2/9"), (0.25, "1/4"),
+    (0.286, "2/7"), (0.3, "3/10"), (0.333, "1/3"), (0.364, "4/11"),
+    (0.4, "2/5"), (0.444, "4/9"), (0.5, "1/2"), (0.533, "8/15"),
+    (0.571, "4/7"), (0.615, "8/13"), (0.667, "4/6"), (0.727, "8/11"),
+    (0.8, "4/5"), (0.833, "5/6"), (0.909, "10/11"), (1.0, "EVS"),
+    (1.1, "11/10"), (1.2, "6/5"), (1.25, "5/4"), (1.375, "11/8"),
+    (1.5, "6/4"), (1.625, "13/8"), (1.75, "7/4"), (1.875, "15/8"),
+    (2.0, "2/1"), (2.25, "9/4"), (2.5, "5/2"), (2.75, "11/4"),
+    (3.0, "3/1"), (3.333, "100/30"), (3.5, "7/2"), (4.0, "4/1"),
+    (4.5, "9/2"), (5.0, "5/1"), (5.5, "11/2"), (6.0, "6/1"),
+    (6.5, "13/2"), (7.0, "7/1"), (7.5, "15/2"), (8.0, "8/1"),
+    (9.0, "9/1"), (10.0, "10/1"), (11.0, "11/1"), (12.0, "12/1"),
+    (14.0, "14/1"), (16.0, "16/1"), (20.0, "20/1"), (22.0, "22/1"),
+    (25.0, "25/1"), (28.0, "28/1"), (33.0, "33/1"), (40.0, "40/1"),
+    (50.0, "50/1"), (66.0, "66/1"), (80.0, "80/1"), (100.0, "100/1"),
+]
+
+
+def decimal_to_fractional(odds: float) -> str:
+    """Convert decimal odds (e.g. 3.75) to standard racing fractional (e.g. '11/4')."""
+    if odds <= 1.0:
+        return "1/1"
+    profit = odds - 1.0
+    best_frac = min(_RACING_FRACTIONS, key=lambda x: abs(x[0] - profit))
+    return best_frac[1]
+
+
 BETS_LOG_COLS = [
     "date", "race_id", "runner_id", "horse", "course", "time",
     "category", "model_prob", "back_odds", "edge", "stake", "model_signals",
+    "forecast_odds",
 ]
 
 

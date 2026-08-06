@@ -44,7 +44,7 @@ from pipelines.ai_agents import (
     generate_post_race_summary,
 )
 from pipelines import track_pnl
-from pipelines.helpers import resolve_date, BETS_LOG_COLS
+from pipelines.helpers import resolve_date, BETS_LOG_COLS, decimal_to_fractional
 
 DB_PATH = str(ROOT / "racing.duckdb")
 BETS_LOG = ROOT / "logs" / "daily_bets.csv"
@@ -167,8 +167,9 @@ def format_picks_message(target_date: date, posted: list[dict], preview: str) ->
         lines += [
             "",
             f"{emoji} **{b.get('race_time')} {b.get('course')}** [{b.get('category', '').upper()}]",
-            f"**{str(b.get('horse', '')).upper()}** — Back {b.get('back_odds')} | "
-            f"Model {b.get('model_prob', 0):.0%} | Edge +{b.get('edge', 0):.0%}",
+            f"**{str(b.get('horse', '')).upper()}** — Back {b.get('back_odds')}"
+            + (f" (BBO: {decimal_to_fractional(b['forecast_odds'])})" if b.get('forecast_odds') else "")
+            + f" | Model {b.get('model_prob', 0):.0%} | Edge +{b.get('edge', 0):.0%}",
             f"🔍 Analyst: {b.get('analysis_text', '')}",
         ]
     lines += ["", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", f"💬 {preview}"]
@@ -200,9 +201,12 @@ def format_results_message(target_date: date, settled: list[dict], summary: str)
     total_staked = sum(r.get("stake", 1.0) for r in settled)
     total_profit = sum(r.get("profit", 0.0) for r in settled)
     total_profit_bsp = sum(r.get("profit_bsp", 0.0) for r in settled)
+    total_profit_fcst = sum(r.get("profit_forecast", 0.0) for r in settled)
+    any_fcst = any(r.get("forecast_odds") for r in settled)
     winners = sum(1 for r in settled if r.get("won"))
     roi = total_profit / total_staked * 100 if total_staked else 0
     roi_bsp = total_profit_bsp / total_staked * 100 if total_staked else 0
+    roi_fcst = total_profit_fcst / total_staked * 100 if total_staked else 0
 
     lines = [f"📊 **RESULTS — {target_date:%d %b %Y}**", ""]
     for r in sorted(settled, key=lambda x: str(x.get("time", ""))):
@@ -210,17 +214,18 @@ def format_results_message(target_date: date, settled: list[dict], summary: str)
         outcome = "WON" if r.get("won") else "LOST"
         sp = f"{r.get('sp'):.1f}" if r.get("sp") else "-"
         back = f"{r.get('back'):.1f}" if r.get("back") else "-"
+        fcst = f" BBO {decimal_to_fractional(r['forecast_odds'])}" if r.get("forecast_odds") else ""
         lines.append(
             f"{mark} {r.get('horse')} ({r.get('course')} {r.get('time')}) — "
-            f"Back {back} (SP {sp}) — {outcome} {r.get('profit', 0):+.2f}u"
+            f"Back {back}{fcst} (SP {sp}) — {outcome} {r.get('profit', 0):+.2f}u"
         )
-    lines += [
-        "",
+    day_line = (
         f"Day: {len(settled)} bets | {winners}W | P&L: {total_profit:+.2f}u | ROI: {roi:+.1f}% "
-        f"(BSP {total_profit_bsp:+.2f}u / {roi_bsp:+.1f}%)",
-        "",
-        f"💬 {summary}",
-    ]
+        f"(BSP {total_profit_bsp:+.2f}u / {roi_bsp:+.1f}%)"
+    )
+    if any_fcst:
+        day_line += f" (BBO {total_profit_fcst:+.2f}u / {roi_fcst:+.1f}%)"
+    lines += ["", day_line, "", f"💬 {summary}"]
     return "\n".join(lines)
 
 
@@ -259,15 +264,20 @@ def format_top_picks_message(target_date: date, picks: list[dict]) -> list[str]:
             return None
         return None if f != f else f  # f != f is True for NaN
 
+    any_bbo = any(num(p.get("forecast_odds")) for p in picks)
+
     header = (
         f"{'Time':<5} {'Course':<12} {'Cat':<6} {'Horse':<20} "
         f"{'Model%':>6} {'MOdds':>5} {'Back':>5} {'Lay':>5} {'£Avl':>5} {'Edge':>6}"
     )
+    if any_bbo:
+        header += f" {'BBO':>6}"
 
     def fmt_row(p):
         prob, modds = num(p.get("model_prob")), num(p.get("model_odds"))
         back, lay, avl, edge = (num(p.get(k)) for k in ("back", "lay", "avl", "edge"))
-        return (
+        fcst = num(p.get("forecast_odds"))
+        line = (
             f"{str(p.get('time', ''))[:5]:<5} "
             f"{str(p.get('course', ''))[:12]:<12} "
             f"{str(p.get('category', '')).upper()[:6]:<6} "
@@ -279,6 +289,9 @@ def format_top_picks_message(target_date: date, picks: list[dict]) -> list[str]:
             f"{(f'£{avl:.0f}' if avl else '-'):>5} "
             f"{(f'{edge*100:+.1f}%' if edge is not None else '-'):>6}"
         )
+        if any_bbo:
+            line += f" {(decimal_to_fractional(fcst) if fcst else '-'):>6}"
+        return line
 
     title = (
         f"🏇 **MODEL TOP PICKS — {target_date:%d %b %Y}**\n"
@@ -360,14 +373,18 @@ def build_settled_results(target_date: date, db_path: str) -> list[dict]:
     settled = pnl[pnl["settled"]]
     out = []
     for _, r in settled.iterrows():
-        out.append({
+        entry = {
             "horse": r.get("horse"), "course": r.get("course"), "time": r.get("time"),
             "sp": r.get("sp"),
             "back": float(r["back_odds"]) if pd.notna(r.get("back_odds")) else None,
             "won": bool(r.get("won_actual")),
             "profit": float(r.get("profit", 0)), "profit_bsp": float(r.get("profit_bsp", 0)),
             "stake": float(r.get("stake", 1.0)),
-        })
+        }
+        if pd.notna(r.get("forecast_odds")):
+            entry["forecast_odds"] = float(r["forecast_odds"])
+            entry["profit_forecast"] = float(r.get("profit_forecast", 0))
+        out.append(entry)
     return out
 
 

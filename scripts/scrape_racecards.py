@@ -204,9 +204,13 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
                 parts = color_sex.strip().split()
                 if len(parts) >= 2:
                     sex_code = parts[-1].upper()
+            raw_fcst = runner.get("forecastOddsValue")
+            forecast_odds = round(raw_fcst + 1, 2) if raw_fcst is not None else None
+
             race_entry["runners"].append({
                 "name": runner.get("horseName", ""),
                 "sex_code": sex_code,
+                "forecast_odds": forecast_odds,
             })
 
         if (i + 1) % 10 == 0:

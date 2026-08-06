@@ -29,6 +29,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from ingestion.db_connect import get_db
+from pipelines.helpers import decimal_to_fractional
 
 BETS_LOG = ROOT / "logs" / "daily_bets.csv"
 TOP_PICKS_LOG = ROOT / "logs" / "daily_top_picks.csv"
@@ -147,6 +148,17 @@ def _settle_profit(odds: float, won: bool, stake: float) -> float:
     return (odds - 1) * stake if won else -stake
 
 
+def _settle_profit_optional(odds_col: str, r: pd.Series) -> float:
+    if not r["settled"]:
+        return 0.0
+    if odds_col not in r.index:
+        return 0.0
+    odds = r[odds_col]
+    if pd.isna(odds) or odds <= 0:
+        return 0.0
+    return _settle_profit(odds, r["won_actual"], r["stake"])
+
+
 def _merge_with_results(df: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
     merged = df.merge(results, on="runner_id_norm", how="left", suffixes=("", "_actual"))
     merged["settled"] = merged["sp_decimal"].notna()
@@ -171,6 +183,7 @@ def compute_pnl(bets: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
 
     merged["profit"] = merged.apply(lambda r: _profit(r, "back_odds"), axis=1)
     merged["profit_bsp"] = merged.apply(lambda r: _profit(r, "sp"), axis=1)
+    merged["profit_forecast"] = merged.apply(lambda r: _settle_profit_optional("forecast_odds", r), axis=1)
 
     return merged
 
@@ -194,11 +207,16 @@ def compute_top_picks_pnl(picks: pd.DataFrame, results: pd.DataFrame) -> pd.Data
         lambda r: _settle_profit(r["sp"], r["won_actual"], r["stake"]) if r["settled"] else 0.0,
         axis=1,
     )
+    merged["profit_forecast"] = merged.apply(lambda r: _settle_profit_optional("forecast_odds", r), axis=1)
 
     return merged
 
 
 # ── Printing ───────────────────────────────────────────────────────────
+
+
+def _has_forecast_data(settled: pd.DataFrame) -> bool:
+    return "forecast_odds" in settled.columns and settled["forecast_odds"].notna().any()
 
 
 def _print_category_summary(settled: pd.DataFrame, label: str, indent: int = 0) -> None:
@@ -207,10 +225,17 @@ def _print_category_summary(settled: pd.DataFrame, label: str, indent: int = 0) 
     profit_bsp = settled["profit_bsp"].sum()
     roi = profit / staked * 100 if staked > 0 else 0
     roi_bsp = profit_bsp / staked * 100 if staked > 0 else 0
+    winners = int(settled["won_actual"].sum())
+    sr = winners / len(settled) * 100 if len(settled) > 0 else 0
     padded = f"{' ' * indent}{label}"
-    print(f"  {padded:<12} Bets: {len(settled):<5} |  "
-          f"P&L: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
-          f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
+    line = (f"  {padded:<12} Bets: {len(settled):<5} W: {winners:<4} SR: {sr:3.0f}%  |  "
+            f"P&L: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
+            f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
+    if _has_forecast_data(settled):
+        profit_fc = settled["profit_forecast"].sum()
+        roi_fc = profit_fc / staked * 100 if staked > 0 else 0
+        line += f"  |  BBO: {profit_fc:+8.2f}u ({roi_fc:+7.1f}%)"
+    print(line)
 
 
 def _print_tp_category_summary(settled: pd.DataFrame, label: str, indent: int = 0) -> None:
@@ -222,9 +247,14 @@ def _print_tp_category_summary(settled: pd.DataFrame, label: str, indent: int = 
     winners = int(settled["won_actual"].sum())
     sr = winners / len(settled) * 100 if len(settled) > 0 else 0
     padded = f"{' ' * indent}{label}"
-    print(f"  {padded:<12} Picks: {len(settled):<5} W: {winners:<4} SR: {sr:3.0f}%  |  "
-          f"Back: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
-          f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
+    line = (f"  {padded:<12} Picks: {len(settled):<5} W: {winners:<4} SR: {sr:3.0f}%  |  "
+            f"Back: {profit:+8.2f}u ({roi:+7.1f}%)  |  "
+            f"BSP: {profit_bsp:+8.2f}u ({roi_bsp:+7.1f}%)")
+    if _has_forecast_data(settled):
+        profit_fc = settled["profit_forecast"].sum()
+        roi_fc = profit_fc / staked * 100 if staked > 0 else 0
+        line += f"  |  BBO: {profit_fc:+8.2f}u ({roi_fc:+7.1f}%)"
+    print(line)
 
 
 def _range_label(date_from: date | None, date_to: date | None) -> str:
@@ -262,14 +292,19 @@ def print_single_day(pnl: pd.DataFrame, target_date: date) -> None:
         print(f"No settled bets for {target_date}.")
         return
 
+    has_bbo = _has_forecast_data(settled)
+
     print(f"\n  {target_date}")
 
     for cat in sorted(settled["category"].dropna().unique()):
         cat_settled = settled[settled["category"] == cat]
         print(f"  {'-'*62}")
         print(f"  {cat.upper()}")
-        print(f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'Back':>5} {'SP':>6} {'W':>3} {'P&L':>8} {'BSP':>8}")
-        print(f"  {'-'*70}")
+        hdr = f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'Back':>5} {'SP':>6} {'W':>3} {'P&L':>8} {'BSP':>8}"
+        if has_bbo:
+            hdr += f" {'BBO':>6} {'BBO':>8}"
+        print(hdr)
+        print(f"  {'-'*(84 if has_bbo else 70)}")
 
         for _, r in cat_settled.sort_values("time").iterrows():
             horse = str(r.get("horse", "?"))[:21]
@@ -280,11 +315,16 @@ def print_single_day(pnl: pd.DataFrame, target_date: date) -> None:
             won_str = "Y" if r["won_actual"] else ""
             pnl_str = f"{r['profit']:+.2f}"
             pnl_bsp_str = f"{r['profit_bsp']:+.2f}"
-            print(f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_str:>8} {pnl_bsp_str:>8}")
+            line = f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_str:>8} {pnl_bsp_str:>8}"
+            if has_bbo:
+                fc_odds = decimal_to_fractional(r['forecast_odds']) if pd.notna(r.get("forecast_odds")) else "-"
+                fc_pnl = f"{r['profit_forecast']:+.2f}"
+                line += f" {fc_odds:>6} {fc_pnl:>8}"
+            print(line)
 
         _print_category_summary(cat_settled, cat.upper())
 
-    print(f"  {'='*70}")
+    print(f"  {'='*(84 if has_bbo else 70)}")
     _print_category_summary(settled, "TOTAL")
 
 
@@ -309,14 +349,19 @@ def print_top_picks_single_day(pnl: pd.DataFrame, target_date: date) -> None:
         print(f"No settled top picks for {target_date}.")
         return
 
+    has_fcst = _has_forecast_data(settled)
+
     print(f"\n  {target_date}")
 
     for cat in sorted(settled["category"].dropna().unique()):
         cat_settled = settled[settled["category"] == cat]
         print(f"  {'-'*70}")
         print(f"  {cat.upper()}")
-        print(f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'Back':>5} {'SP':>6} {'W':>3} {'Back':>8} {'BSP':>8}")
-        print(f"  {'-'*70}")
+        hdr = f"  {'Horse':<22} {'Course':<12} {'Time':<6} {'Back':>5} {'SP':>6} {'W':>3} {'Back':>8} {'BSP':>8}"
+        if has_fcst:
+            hdr += f" {'Fcst':>5} {'Fcst':>8}"
+        print(hdr)
+        print(f"  {'-'*(83 if has_fcst else 70)}")
 
         for _, r in cat_settled.sort_values("time").iterrows():
             horse = str(r.get("horse", "?"))[:21]
@@ -327,11 +372,16 @@ def print_top_picks_single_day(pnl: pd.DataFrame, target_date: date) -> None:
             won_str = "Y" if r["won_actual"] else ""
             pnl_back_str = f"{r['profit']:+.2f}"
             pnl_bsp_str = f"{r['profit_bsp']:+.2f}"
-            print(f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_back_str:>8} {pnl_bsp_str:>8}")
+            line = f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_back_str:>8} {pnl_bsp_str:>8}"
+            if has_bbo:
+                fc_odds = decimal_to_fractional(r['forecast_odds']) if pd.notna(r.get("forecast_odds")) else "-"
+                fc_pnl = f"{r['profit_forecast']:+.2f}"
+                line += f" {fc_odds:>6} {fc_pnl:>8}"
+            print(line)
 
         _print_tp_category_summary(cat_settled, cat.upper())
 
-    print(f"  {'='*70}")
+    print(f"  {'='*(84 if has_bbo else 70)}")
     _print_tp_category_summary(settled, "TOTAL")
 
 
@@ -363,6 +413,10 @@ def _write_daily_tracker(settled: pd.DataFrame, output_path: Path, has_bsp: bool
     if has_bsp:
         agg_dict["total_profit_bsp"] = ("profit_bsp", "sum")
 
+    has_fcst = "profit_forecast" in settled.columns
+    if has_fcst:
+        agg_dict["total_profit_forecast"] = ("profit_forecast", "sum")
+
     daily = settled.groupby("date").agg(**agg_dict).reset_index()
     daily["roi_pct"] = (daily["total_profit"] / daily["total_staked"] * 100).round(1)
     daily["cumulative_profit"] = daily["total_profit"].cumsum().round(2)
@@ -374,6 +428,11 @@ def _write_daily_tracker(settled: pd.DataFrame, output_path: Path, has_bsp: bool
         daily["cumulative_profit_bsp"] = daily["total_profit_bsp"].cumsum().round(2)
         daily["cumulative_roi_bsp_pct"] = (daily["cumulative_profit_bsp"] / daily["cumulative_staked"] * 100).round(1)
         daily["total_profit_bsp"] = daily["total_profit_bsp"].round(2)
+
+    if has_fcst:
+        daily["cumulative_profit_forecast"] = daily["total_profit_forecast"].cumsum().round(2)
+        daily["cumulative_roi_forecast_pct"] = (daily["cumulative_profit_forecast"] / daily["cumulative_staked"] * 100).round(1)
+        daily["total_profit_forecast"] = daily["total_profit_forecast"].round(2)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     daily.to_csv(output_path, index=False)

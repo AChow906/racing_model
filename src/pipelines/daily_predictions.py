@@ -33,7 +33,7 @@ load_dotenv(ROOT / ".env")
 from ingestion.db_connect import get_db
 from ingestion.normalise import slugify, decision_cutoff_for_off_time
 from constants.features import EXCLUDE, JUMPS_DROP, FLAT_V2_FEATURES
-from pipelines.helpers import resolve_date, append_dated_csv, BETS_LOG_COLS
+from pipelines.helpers import resolve_date, append_dated_csv, BETS_LOG_COLS, decimal_to_fractional
 
 MODELS_DIR = ROOT / "models"
 
@@ -462,8 +462,9 @@ def load_and_score(target_date, category, params="tuned"):
     return df, probs
 
 
-def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0):
-    """Print formatted race cards with live exchange odds."""
+def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0, forecast_odds=None):
+    """Print formatted race cards with live exchange odds and forecast prices."""
+    forecast_odds = forecast_odds or {}
     sel_lookup = {r["runner_id"]: r.get("selection_id") for r in runner_data}
     cloth_lookup = {r["runner_id"]: r.get("cloth_number") for r in runner_data}
 
@@ -495,9 +496,14 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
         print(f"  {uk_time}  {course}  [{category.upper()}]")
         print(f"{'='*75}")
 
+        has_bbo = has_live and len(forecast_odds) > 0
+
         if has_live:
-            print(f"  {'#':<3} {'Horse':<20} {'Model%':>6} {'MOdds':>5} {'Back':>5} {'Lay':>5} {'£Avl':>5} {'Edge':>6}")
-            print(f"  {'-'*58}")
+            hdr = f"  {'#':<3} {'Horse':<20} {'Model%':>6} {'MOdds':>5} {'Back':>5} {'Lay':>5} {'£Avl':>5} {'Edge':>6}"
+            if has_bbo:
+                hdr += f" {'BBO':>6}"
+            print(hdr)
+            print(f"  {'-'*(64 if has_bbo else 58)}")
         else:
             print(f"  {'#':<3} {'Horse':<20} {'Trainer':<16} {'Jockey':<14} {'Model%':>6} {'MOdds':>5}")
             print(f"  {'-'*68}")
@@ -506,10 +512,13 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
             horse = str(row.get("horse", "?"))[:19]
             prob = f"{row['model_prob']*100:.1f}%"
             m_odds = f"{row['model_odds']:.1f}"
-            back = lay = avl = edge_val = None
+            back = lay = avl = edge_val = fcst = None
+
+            runner_id = row.get("runner_id")
+            fcst = forecast_odds.get(runner_id)
 
             if has_live:
-                sel_id = sel_lookup.get(row.get("runner_id"))
+                sel_id = sel_lookup.get(runner_id)
                 odds_data = live_odds.get(sel_id, {}) if sel_id else {}
                 back = odds_data.get("back")
                 lay = odds_data.get("lay")
@@ -518,6 +527,7 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
                 back_str = f"{back:.1f}" if back else "-"
                 lay_str = f"{lay:.1f}" if lay else "-"
                 avl_str = f"£{avl:.0f}" if avl else "-"
+                bbo_str = decimal_to_fractional(fcst) if fcst else "-"
 
                 edge = ""
                 marker = ""
@@ -527,20 +537,24 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
                     edge = f"{edge_val*100:+.1f}%"
                     if edge_val > min_edge:
                         marker = " <<< BET"
-                        cloth = cloth_lookup.get(row.get("runner_id"))
+                        cloth = cloth_lookup.get(runner_id)
                         value_bets.append({
                             "cloth": cloth, "rank": i,
                             "horse": row.get("horse"),
-                            "runner_id": row.get("runner_id"),
+                            "runner_id": runner_id,
                             "race_id": race_id,
                             "course": course, "time": uk_time,
                             "model_prob": row["model_prob"], "back": back,
                             "edge": edge_val, "avl": avl,
                             "category": category,
                             "model_signals": row.get("signals", ""),
+                            "forecast_odds": fcst,
                         })
 
-                print(f"  {i:<3} {horse:<20} {prob:>6} {m_odds:>5} {back_str:>5} {lay_str:>5} {avl_str:>5} {edge:>6}{marker}")
+                line = f"  {i:<3} {horse:<20} {prob:>6} {m_odds:>5} {back_str:>5} {lay_str:>5} {avl_str:>5} {edge:>6}"
+                if has_bbo:
+                    line += f" {bbo_str:>6}"
+                print(f"{line}{marker}")
             else:
                 trainer = str(row.get("trainer", ""))[:15]
                 jockey = str(row.get("jockey", ""))[:13]
@@ -549,7 +563,7 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
             if i == 1:
                 top_picks.append({
                     "race_id": race_id,
-                    "runner_id": row.get("runner_id"),
+                    "runner_id": runner_id,
                     "horse": row.get("horse"),
                     "course": course,
                     "time": uk_time,
@@ -561,17 +575,26 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0)
                     "avl": avl,
                     "edge": edge_val,
                     "model_signals": row.get("signals", ""),
+                    "forecast_odds": fcst,
                 })
 
     if value_bets:
+        any_bbo = any(vb.get("forecast_odds") for vb in value_bets)
         print(f"\n{'='*85}")
         print(f"  VALUE BETS — {category.upper()} ({len(value_bets)} selections, edge>{min_edge:.0%})")
         print(f"{'='*85}")
-        print(f"  {'Time':<6} {'No.':<4} {'Horse':<20} {'Course':<12} {'Rank':>4} {'Model%':>6} {'Back':>5} {'Edge':>6} {'Avail':>6}")
-        print(f"  {'-'*73}")
+        hdr = f"  {'Time':<6} {'No.':<4} {'Horse':<20} {'Course':<12} {'Rank':>4} {'Model%':>6} {'Back':>5} {'Edge':>6} {'Avail':>6}"
+        if any_bbo:
+            hdr += f" {'BBO':>6}"
+        print(hdr)
+        print(f"  {'-'*(79 if any_bbo else 73)}")
         for vb in sorted(value_bets, key=lambda x: x["edge"], reverse=True):
             cloth_str = str(vb['cloth']) if vb['cloth'] else "?"
-            print(f"  {str(vb['time']):<6} {cloth_str:<4} {str(vb['horse'])[:19]:<20} {str(vb['course'])[:11]:<12} {vb['rank']:>4} {vb['model_prob']*100:.1f}% {vb['back']:>5.1f} {vb['edge']*100:>+5.1f}% £{vb['avl']:>4.0f}")
+            line = f"  {str(vb['time']):<6} {cloth_str:<4} {str(vb['horse'])[:19]:<20} {str(vb['course'])[:11]:<12} {vb['rank']:>4} {vb['model_prob']*100:.1f}% {vb['back']:>5.1f} {vb['edge']*100:>+5.1f}% £{vb['avl']:>4.0f}"
+            if any_bbo:
+                bbo_val = vb.get("forecast_odds")
+                line += f" {decimal_to_fractional(bbo_val) if bbo_val else '-':>6}"
+            print(line)
 
     return out, value_bets, top_picks
 
@@ -593,6 +616,7 @@ def save_bets_log(value_bets: list[dict], target_date: date, refresh: bool = Fal
         "edge": round(vb["edge"], 4),
         "stake": 1.0,
         "model_signals": vb.get("model_signals", ""),
+        "forecast_odds": vb.get("forecast_odds"),
     } for vb in value_bets])
     append_dated_csv(ROOT / "logs" / "daily_bets.csv", new_rows, target_date,
                      BETS_LOG_COLS, refresh=refresh, label="bets")
@@ -601,6 +625,7 @@ def save_bets_log(value_bets: list[dict], target_date: date, refresh: bool = Fal
 TOP_PICKS_LOG_COLS = [
     "date", "race_id", "runner_id", "horse", "course", "time", "category",
     "model_prob", "model_odds", "back", "lay", "avl", "edge", "model_signals",
+    "forecast_odds",
 ]
 
 
@@ -627,6 +652,7 @@ def save_top_picks(top_picks: list[dict], target_date: date, refresh: bool = Fal
         "avl": tp.get("avl"),
         "edge": round(tp["edge"], 4) if tp.get("edge") is not None else None,
         "model_signals": tp.get("model_signals", ""),
+        "forecast_odds": tp.get("forecast_odds"),
     } for tp in top_picks])
     append_dated_csv(ROOT / "logs" / "daily_top_picks.csv", new_rows, target_date,
                      TOP_PICKS_LOG_COLS, refresh=refresh, label="top picks")
@@ -701,6 +727,23 @@ def main():
         print(f"  Could not fetch live odds: {e}", flush=True)
         live_odds = {}
 
+    # Load forecast odds from DB (set during racecard enrichment)
+    forecast_odds: dict[str, float] = {}
+    try:
+        db_fc = get_db(str(ROOT / "racing.duckdb"))
+        fc_df = db_fc.execute(
+            """SELECT runner_id, forecast_odds FROM runners
+               WHERE race_id IN (SELECT race_id FROM races WHERE race_date = ?)
+               AND forecast_odds IS NOT NULL""",
+            [target_date],
+        ).df()
+        db_fc.close()
+        forecast_odds = dict(zip(fc_df["runner_id"], fc_df["forecast_odds"]))
+        if forecast_odds:
+            print(f"  Loaded forecast odds for {len(forecast_odds)} runners", flush=True)
+    except Exception as e:
+        print(f"  Could not load forecast odds: {e}", flush=True)
+
     if args.flat:
         categories = ["flat"]
     elif args.jumps:
@@ -743,7 +786,7 @@ def main():
         n_races = df["race_id"].nunique()
         print(f"  {len(df)} runners across {n_races} races", flush=True)
 
-        out, value_bets, top_picks = print_predictions(df, probs, category, runners, live_odds, min_edge=args.min_edge)
+        out, value_bets, top_picks = print_predictions(df, probs, category, runners, live_odds, min_edge=args.min_edge, forecast_odds=forecast_odds)
         out["category"] = category
         all_outputs.append(out)
         all_value_bets.extend(value_bets)
