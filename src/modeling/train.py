@@ -7,9 +7,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import brier_score_loss, log_loss
-
+from src.constants.features import DROP_LOW_IMPORTANCE, EXCLUDE
 from src.ingestion.db_connect import get_db
-from src.constants.features import EXCLUDE, DROP_LOW_IMPORTANCE
 
 TRAIN_START = "2015-01-01"
 TRAIN_END = "2022-01-01"
@@ -76,7 +75,7 @@ def top_pick_win_rate(probs: np.ndarray, race_ids: np.ndarray, y_true: np.ndarra
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train LightGBM LambdaRank on feature_store")
     parser.add_argument("--window", default="window_a", choices=["window_a"])
-    args = parser.parse_args()
+    parser.parse_args()
 
     X_train, y_train, g_train, df_train = load_split(TRAIN_START, TRAIN_END)
     X_val, y_val, g_val, df_val = load_split(VAL_START, VAL_END)
@@ -234,10 +233,10 @@ def main() -> None:
     print(f"Best iteration: {model.best_iteration_}")
     print(f"NDCG@1: {ndcg1}")
     print(f"NDCG@3: {ndcg3}")
-    print(f"")
+    print("")
     print(f"Before calibration:  Brier={brier_raw:.5f}  LogLoss={ll_raw:.5f}  TopPick={top1_raw:.4f}")
     print(f"After calibration:   Brier={brier:.5f}  LogLoss={ll:.5f}  TopPick={top1:.4f}")
-    print(f"\nValue betting analysis (edge > 5%):")
+    print("\nValue betting analysis (edge > 5%):")
     print(f"  Qualifying bets: {len(value_bets):,}")
     print(f"  Strike rate: {value_strike:.4f}")
     print(f"  Avg BSP odds: {value_avg_odds:.2f}")

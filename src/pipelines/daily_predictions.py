@@ -15,7 +15,7 @@ import argparse
 import os
 import pickle
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import lightgbm as lgb
@@ -30,10 +30,10 @@ if str(SRC_ROOT) not in sys.path:
 
 load_dotenv(ROOT / ".env")
 
+from constants.features import EXCLUDE, FLAT_V2_FEATURES, JUMPS_DROP
 from ingestion.db_connect import get_db
-from ingestion.normalise import slugify, decision_cutoff_for_off_time
-from constants.features import EXCLUDE, JUMPS_DROP, FLAT_V2_FEATURES
-from pipelines.helpers import resolve_date, append_dated_csv, BETS_LOG_COLS, decimal_to_fractional
+from ingestion.normalise import decision_cutoff_for_off_time, slugify
+from pipelines.helpers import BETS_LOG_COLS, append_dated_csv, decimal_to_fractional, resolve_date
 
 MODELS_DIR = ROOT / "models"
 
@@ -90,8 +90,8 @@ def fetch_race_cards(target_date: date):
 
     client = get_betfair_client()
 
-    day_start = datetime(target_date.year, target_date.month, target_date.day, 0, 0, tzinfo=timezone.utc)
-    day_end = datetime(target_date.year, target_date.month, target_date.day, 23, 59, tzinfo=timezone.utc)
+    day_start = datetime(target_date.year, target_date.month, target_date.day, 0, 0, tzinfo=UTC)
+    day_end = datetime(target_date.year, target_date.month, target_date.day, 23, 59, tzinfo=UTC)
 
     markets = client.betting.list_market_catalogue(
         filter=betfairlightweight.filters.market_filter(
@@ -216,7 +216,7 @@ def fetch_live_odds(market_ids: list[str]) -> dict:
 def insert_into_db(races, runners, target_date):
     """Insert race cards into DB for feature computation."""
     con = get_db(str(ROOT / "racing.duckdb"))
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     target_str = str(target_date)
 
     con.execute(f"DELETE FROM results WHERE race_id IN (SELECT race_id FROM races WHERE race_date = '{target_str}')")
@@ -260,7 +260,7 @@ def rebuild_features():
     from quality.checks import ensure_standard_race_flag
     ensure_standard_race_flag(con)
 
-    from pipelines.run_phase2_feature_store import _prepare_upstream_inputs, _materialize_feature_store
+    from pipelines.run_phase2_feature_store import _materialize_feature_store, _prepare_upstream_inputs
     _prepare_upstream_inputs(con)
 
     for sql_file in sorted(os.listdir(ROOT / "sql" / "features")):
@@ -590,7 +590,7 @@ def print_predictions(df, probs, category, runner_data, live_odds, min_edge=0.0,
         print(f"  {'-'*(79 if any_bbo else 73)}")
         for vb in sorted(value_bets, key=lambda x: x["edge"], reverse=True):
             cloth_str = str(vb['cloth']) if vb['cloth'] else "?"
-            line = f"  {str(vb['time']):<6} {cloth_str:<4} {str(vb['horse'])[:19]:<20} {str(vb['course'])[:11]:<12} {vb['rank']:>4} {vb['model_prob']*100:.1f}% {vb['back']:>5.1f} {vb['edge']*100:>+5.1f}% £{vb['avl']:>4.0f}"
+            line = f"  {vb['time']!s:<6} {cloth_str:<4} {str(vb['horse'])[:19]:<20} {str(vb['course'])[:11]:<12} {vb['rank']:>4} {vb['model_prob']*100:.1f}% {vb['back']:>5.1f} {vb['edge']*100:>+5.1f}% £{vb['avl']:>4.0f}"
             if any_bbo:
                 bbo_val = vb.get("forecast_odds")
                 line += f" {decimal_to_fractional(bbo_val) if bbo_val else '-':>6}"
@@ -756,7 +756,6 @@ def main():
 
     # Build set of active selection_ids (have odds = still running)
     active_sels = set(live_odds.keys()) if live_odds else set()
-    sel_to_runner = {r.get("selection_id"): r.get("runner_id") for r in runners}
     non_runner_ids = set()
     if active_sels:
         for r in runners:

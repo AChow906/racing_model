@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from datetime import date
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Callable
 
 import duckdb
 import yaml
 
 from ingestion.db_connect import get_db
-
 
 ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT / "racing.duckdb"
@@ -401,8 +399,8 @@ def run_all_checks(
         con.close()
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = LOG_DIR / f"dq_report_{datetime.now(timezone.utc).strftime('%Y%m%d')}.txt"
-    lines = ["Data Quality Report", f"Generated UTC: {datetime.now(timezone.utc).isoformat()}", ""]
+    report_path = LOG_DIR / f"dq_report_{datetime.now(UTC).strftime('%Y%m%d')}.txt"
+    lines = ["Data Quality Report", f"Generated UTC: {datetime.now(UTC).isoformat()}", ""]
     for result in results:
         status = "PASS" if result["passed"] else "FAIL"
         lines.append(

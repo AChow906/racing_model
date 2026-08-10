@@ -20,14 +20,17 @@ import numpy as np
 import pandas as pd
 from catboost import CatBoostRanker, Pool
 from sklearn.metrics import brier_score_loss, log_loss
-
-from src.ingestion.db_connect import get_db
-from src.constants.features import EXCLUDE, FLAT_V2_FEATURES
+from src.constants.features import FLAT_V2_FEATURES
 from src.constants.params import CATBOOST_FLAT_PARAMS
 from src.constants.windows import (
-    TRAIN_END, CAL_START, CAL_END, TEST_START, TEST_END,
+    CAL_END,
+    CAL_START,
+    TEST_END,
+    TEST_START,
+    TRAIN_END,
     WALK_FORWARD_WINDOWS,
 )
+from src.ingestion.db_connect import get_db
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -205,7 +208,7 @@ def run_single_window(train_start, train_end, cal_start, cal_end, test_start, te
 
 def run_walk_forward(min_edge):
     print(f"\n{'='*80}", flush=True)
-    print(f"  FLAT V2 — CATBOOST WALK-FORWARD VALIDATION", flush=True)
+    print("  FLAT V2 — CATBOOST WALK-FORWARD VALIDATION", flush=True)
     print(f"  Features: {len(FLAT_V2_FEATURES)} | Calibration: raw softmax | Min edge: {min_edge:.0%}", flush=True)
     print(f"{'='*80}", flush=True)
 
@@ -282,7 +285,7 @@ def run_walk_forward(min_edge):
 
 def run_single(min_edge):
     print(f"\n{'='*80}", flush=True)
-    print(f"  FLAT V2 — CATBOOST (single split)", flush=True)
+    print("  FLAT V2 — CATBOOST (single split)", flush=True)
     print(f"{'='*80}", flush=True)
 
     result = run_single_window(
@@ -326,11 +329,11 @@ def main():
     args = parser.parse_args()
 
     if args.walk_forward:
-        results = run_walk_forward(args.min_edge)
+        run_walk_forward(args.min_edge)
 
         if args.also_lgbm:
             print(f"\n\n{'='*80}", flush=True)
-            print(f"  LIGHTGBM COMPARISON (same features, raw softmax, no isotonic)", flush=True)
+            print("  LIGHTGBM COMPARISON (same features, raw softmax, no isotonic)", flush=True)
             print(f"{'='*80}", flush=True)
             run_lgbm_comparison(args.min_edge)
     else:

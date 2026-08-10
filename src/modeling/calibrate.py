@@ -1,7 +1,5 @@
-import numpy as np
 from scipy.special import softmax
 from sklearn.isotonic import IsotonicRegression
-import pandas as pd
 
 
 def scores_to_probs(df_val, raw_scores):

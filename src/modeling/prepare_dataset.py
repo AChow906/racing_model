@@ -1,4 +1,3 @@
-import duckdb
 import pandas as pd
 from src.ingestion.db_connect import get_db
 

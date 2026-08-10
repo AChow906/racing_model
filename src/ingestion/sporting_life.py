@@ -4,13 +4,12 @@ import argparse
 import csv
 import random
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
-
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_ROOT = ROOT / "data" / "raw" / "sporting_life"
@@ -30,7 +29,7 @@ def fetch_page(url: str) -> str:
 
 
 def save_raw_html(url: str, html: str) -> Path:
-    date_dir = RAW_ROOT / datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_dir = RAW_ROOT / datetime.now(UTC).strftime("%Y-%m-%d")
     date_dir.mkdir(parents=True, exist_ok=True)
     file_name = url.rstrip("/").split("/")[-1] or "index"
     out_file = date_dir / f"{file_name}.html"

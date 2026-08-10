@@ -38,13 +38,13 @@ if str(SRC_ROOT) not in sys.path:
 load_dotenv(ROOT / ".env")
 
 from ingestion.db_connect import get_db
+from pipelines import track_pnl
 from pipelines.ai_agents import (
-    run_race_analysis_agent,
     generate_morning_preview,
     generate_post_race_summary,
+    run_race_analysis_agent,
 )
-from pipelines import track_pnl
-from pipelines.helpers import resolve_date, BETS_LOG_COLS, decimal_to_fractional
+from pipelines.helpers import BETS_LOG_COLS, decimal_to_fractional, resolve_date
 
 DB_PATH = str(ROOT / "racing.duckdb")
 BETS_LOG = ROOT / "logs" / "daily_bets.csv"
@@ -99,7 +99,6 @@ def enrich_bets_with_ids(bets: pd.DataFrame, db_path: str) -> list[dict[str, Any
     try:
         for _, row in bets.iterrows():
             runner_id = row["runner_id"]
-            race_id = row["race_id"]
             meta = con.execute(
                 """
                 SELECT ru.horse_id, ru.trainer_id, ru.jockey_id,

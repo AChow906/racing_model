@@ -10,14 +10,17 @@ import numpy as np
 import pandas as pd
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss, log_loss
-
-from src.ingestion.db_connect import get_db
-from src.constants.features import EXCLUDE, FLAT_DROP, JUMPS_DROP, FLAT_V2_FEATURES
+from src.constants.features import EXCLUDE, FLAT_DROP, FLAT_V2_FEATURES, JUMPS_DROP
 from src.constants.params import CATBOOST_FLAT_PARAMS
 from src.constants.windows import (
-    TRAIN_END, CAL_START, CAL_END, TEST_START, TEST_END,
+    CAL_END,
+    CAL_START,
+    TEST_END,
+    TEST_START,
+    TRAIN_END,
     WALK_FORWARD_WINDOWS,
 )
+from src.ingestion.db_connect import get_db
 
 DB_PATH = os.environ.get("RACING_DB", "racing.duckdb")
 
@@ -238,12 +241,12 @@ def train_model(category, train_start="2015-01-01"):
     print(f"  After calibration:   Brier={brier:.5f}  LogLoss={ll:.5f}  TopPick={tpwr:.4f}", flush=True)
 
     cal_table = calibration_table(test_probs, y_test)
-    print(f"\nCalibration (TEST set):", flush=True)
+    print("\nCalibration (TEST set):", flush=True)
     print(cal_table.to_string(index=False), flush=True)
 
     importance = model.feature_importances_
     fi = sorted(zip(feature_names, importance), key=lambda x: x[1], reverse=True)
-    print(f"\nTop 15 features:", flush=True)
+    print("\nTop 15 features:", flush=True)
     for feat, imp in fi[:15]:
         print(f"  {feat:<35} {imp}", flush=True)
 
@@ -323,7 +326,7 @@ def run_value_analysis(df_test, test_probs, y_test, category):
             "+ No novice longshots": (has_sp["edge"]>0.05) & (has_sp["sp_decimal"]<50) & ~((has_sp["career_runs"]>=1) & (has_sp["career_runs"]<=3) & (has_sp["sp_decimal"]>20)),
             "+ Good going only": (has_sp["edge"]>0.05) & (has_sp["sp_decimal"]<50) & ~((has_sp["career_runs"]>=1) & (has_sp["career_runs"]<=3) & (has_sp["sp_decimal"]>20)) & (has_sp["going_code"].isin(["Good","Good To Firm","Yielding","Standard"])),
         }
-        print(f"\n  --- Jumps progressive filters ---", flush=True)
+        print("\n  --- Jumps progressive filters ---", flush=True)
         print(f"  {'Filter':<40} {'Bets':>6} {'Strike':>8} {'AvgSP':>7} {'ROI':>8}", flush=True)
         print(f"  {'-'*72}", flush=True)
         for label, mask in filters.items():
@@ -356,10 +359,10 @@ def run_value_analysis(df_test, test_probs, y_test, category):
             monthly["roi"] = monthly["profit"] / monthly["bets"]
             monthly["cum_profit"] = monthly["profit"].cumsum()
 
-            print(f"\n  --- MONTHLY P&L (£1 stakes) ---", flush=True)
+            print("\n  --- MONTHLY P&L (£1 stakes) ---", flush=True)
             print(f"  {'Month':<10} {'Bets':>5} {'Wins':>5} {'P&L':>8} {'ROI':>7} {'Cumulative':>11}", flush=True)
             for _, row in monthly.iterrows():
-                print(f"  {str(row['month']):<10} {row['bets']:>5} {int(row['wins']):>5} £{row['profit']:>+7.0f} {row['roi']:>+6.1%} £{row['cum_profit']:>+10.0f}", flush=True)
+                print(f"  {row['month']!s:<10} {row['bets']:>5} {int(row['wins']):>5} £{row['profit']:>+7.0f} {row['roi']:>+6.1%} £{row['cum_profit']:>+10.0f}", flush=True)
 
     return analysis
 
@@ -442,7 +445,7 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
         model.fit(train_pool, eval_set=cal_pool, early_stopping_rounds=200)
         best_iter = model.best_iteration_
 
-        cal_scores = model.predict(X_cal)
+        model.predict(X_cal)
         test_scores = model.predict(X_test)
     else:
         model = lgb.LGBMRanker(
@@ -465,10 +468,9 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
             callbacks=[lgb.early_stopping(200, first_metric_only=True), lgb.log_evaluation(100)],
         )
         best_iter = model.best_iteration_
-        cal_scores = model.predict(X_cal, num_iteration=best_iter)
+        model.predict(X_cal, num_iteration=best_iter)
         test_scores = model.predict(X_test, num_iteration=best_iter)
 
-    cal_ids = df_cal["race_id"].to_numpy()
     test_ids = df_test["race_id"].to_numpy()
     test_probs = race_softmax(test_scores, test_ids)
 
@@ -480,7 +482,7 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
     print(f"  Brier={brier:.5f}  LogLoss={ll:.5f}  TopPick={tpwr:.1%}", flush=True)
 
     cal_table = calibration_table(test_probs, y_test)
-    print(f"\n  Calibration (raw softmax on TEST):", flush=True)
+    print("\n  Calibration (raw softmax on TEST):", flush=True)
     print(cal_table.to_string(index=False), flush=True)
 
     db2 = get_db(DB_PATH)
@@ -500,7 +502,7 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
     has_sp = analysis[analysis["sp_decimal"].notna()].copy()
 
     print(f"\n  {'='*70}", flush=True)
-    print(f"  FLAT V2 VALUE ANALYSIS", flush=True)
+    print("  FLAT V2 VALUE ANALYSIS", flush=True)
     print(f"  {'='*70}", flush=True)
 
     for thresh in [0.03, 0.05, 0.08, 0.10, 0.12]:
@@ -534,7 +536,7 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
         fi = sorted(zip(feat_names, model.get_feature_importance(type="PredictionValuesChange")), key=lambda x: x[1], reverse=True)
     else:
         fi = sorted(zip(feat_names, model.feature_importances_), key=lambda x: x[1], reverse=True)
-    print(f"\n  Feature importance:", flush=True)
+    print("\n  Feature importance:", flush=True)
     for feat, imp in fi:
         print(f"    {feat:<35} {imp:.1f}", flush=True)
 
@@ -558,7 +560,7 @@ def train_flat_v2(train_start="2015-01-01", use_catboost=True):
     }
     with open(f"experiments/{run_id}.json", "w") as f:
         json.dump(meta, f, indent=2)
-    print(f"\n  Saved: models/tuned/flat/model.cbm (production)", flush=True)
+    print("\n  Saved: models/tuned/flat/model.cbm (production)", flush=True)
     print(f"  Saved: models/{run_id}.{'cbm' if use_catboost else 'lgbm'} (archive)", flush=True)
 
     return meta
@@ -653,7 +655,7 @@ def walk_forward_flat_v2(use_catboost=True):
     combined = pd.concat(all_window_results)
 
     print(f"\n  {'='*70}", flush=True)
-    print(f"  COMBINED WALK-FORWARD RESULTS", flush=True)
+    print("  COMBINED WALK-FORWARD RESULTS", flush=True)
     print(f"  {'='*70}", flush=True)
 
     for thresh in [0.05, 0.08, 0.10, 0.12]:
@@ -666,7 +668,7 @@ def walk_forward_flat_v2(use_catboost=True):
         total_pnl = vb["profit"].sum()
         print(f"  edge>{thresh:.0%}: {len(vb):>6} bets, strike={strike:.3f}, avgSP={avg_sp:.1f}, ROI={roi:>+7.2%}, P&L=£{total_pnl:>+,.0f}", flush=True)
 
-    print(f"\n  Per-window breakdown (edge>8%):", flush=True)
+    print("\n  Per-window breakdown (edge>8%):", flush=True)
     print(f"  {'Window':<15} {'Bets':>6} {'Strike':>8} {'AvgSP':>7} {'ROI':>8} {'P&L':>10}", flush=True)
     print(f"  {'-'*58}", flush=True)
     for window in [w["label"] for w in WALK_FORWARD_WINDOWS]:
@@ -719,7 +721,7 @@ def main():
             results[category] = meta
 
         print(f"\n{'='*70}", flush=True)
-        print(f"  FINAL SUMMARY", flush=True)
+        print("  FINAL SUMMARY", flush=True)
         print(f"{'='*70}", flush=True)
         for cat, m in results.items():
             print(f"  {cat.upper()}: TopPick={m['test_top_pick']:.1%}  Brier={m['test_brier']:.5f}  LogLoss={m['test_ll']:.5f}", flush=True)

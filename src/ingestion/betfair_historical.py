@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import calendar
+import csv
 import io
 import json
 import os
@@ -10,13 +10,14 @@ import re
 import sys
 import time
 import zipfile
-from datetime import date, datetime, timezone
+from collections.abc import Iterable
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
+import betfairlightweight
 import duckdb
 import requests
-import betfairlightweight
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -301,7 +302,7 @@ def _parse_sp_event_dt(value: Any) -> datetime:
     text = str(value or "").strip()
     # Betfair SP CSV uses dd-mm-YYYY HH:MM and no timezone; treat as UTC for now.
     dt = datetime.strptime(text, "%d-%m-%Y %H:%M")
-    return dt.replace(tzinfo=timezone.utc)
+    return dt.replace(tzinfo=UTC)
 
 
 def _safe_float(value: Any) -> float | None:
@@ -395,7 +396,7 @@ def _sp_row_to_records(raw: dict[str, Any], source_filename: str) -> tuple[dict[
         "country": _country_from_filename(source_filename),
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     runner = {
@@ -417,7 +418,7 @@ def _sp_row_to_records(raw: dict[str, Any], source_filename: str) -> tuple[dict[
         "career_runs": None,
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     result = {
@@ -433,7 +434,7 @@ def _sp_row_to_records(raw: dict[str, Any], source_filename: str) -> tuple[dict[
         "won": won,
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     history = {
@@ -461,7 +462,7 @@ def _sp_row_to_records(raw: dict[str, Any], source_filename: str) -> tuple[dict[
         "days_since_prev_run": None,
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
     return race, runner, result, history
 
@@ -552,7 +553,7 @@ def parse_sp_csv_to_duckdb(csv_path: Path) -> dict[str, Any]:
     finally:
         con.close()
 
-    done_marker.write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
+    done_marker.write_text(datetime.now(UTC).isoformat(), encoding="utf-8")
     return {
         "file": str(csv_path),
         "status": "parsed",
@@ -607,7 +608,7 @@ def _to_race_runner_result_records(raw: dict[str, Any]) -> tuple[dict[str, Any],
         "country": raw.get("country") or "GB",
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     runner = {
@@ -629,7 +630,7 @@ def _to_race_runner_result_records(raw: dict[str, Any]) -> tuple[dict[str, Any],
         "career_runs": raw.get("career_runs"),
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     result = {
@@ -645,7 +646,7 @@ def _to_race_runner_result_records(raw: dict[str, Any]) -> tuple[dict[str, Any],
         "won": won,
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     history = {
@@ -673,7 +674,7 @@ def _to_race_runner_result_records(raw: dict[str, Any]) -> tuple[dict[str, Any],
         "days_since_prev_run": raw.get("days_since_last_run"),
         "event_timestamp_utc": scheduled_off_utc,
         "decision_cutoff_utc": decision_cutoff_utc,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
     return race, runner, result, history
@@ -742,7 +743,7 @@ def parse_zip_to_duckdb(zip_path: Path) -> dict[str, Any]:
     finally:
         con.close()
 
-    done_marker.write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
+    done_marker.write_text(datetime.now(UTC).isoformat(), encoding="utf-8")
     duration = time.time() - started
     return {
         "file": str(zip_path),
@@ -875,10 +876,10 @@ def main() -> None:
                 parse_rows.append(parse_info)
                 print(f"parse {year:04d}-{month:02d}: {parse_info['status']}")
 
-    log_path = ROOT / "logs" / f"historical_ingest_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    log_path = ROOT / "logs" / f"historical_ingest_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_payload = {
-        "started_utc": datetime.now(timezone.utc).isoformat(),
+        "started_utc": datetime.now(UTC).isoformat(),
         "duration_sec": round(time.time() - run_started, 3),
         "download": download_rows,
         "parse": parse_rows,

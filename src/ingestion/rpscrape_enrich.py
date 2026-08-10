@@ -6,7 +6,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +20,6 @@ if str(SRC_ROOT) not in sys.path:
 
 from ingestion.db_connect import get_db
 from ingestion.normalise import normalise_course, slugify
-
 
 DB_PATH = ROOT / "racing.duckdb"
 LOG_DIR = ROOT / "logs"
@@ -127,8 +126,8 @@ def _parse_datetime(value: Any) -> datetime | None:
     try:
         dt = dtparser.parse(text)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except (ValueError, TypeError):
         return None
 
@@ -620,7 +619,7 @@ def enrich_from_rpscrape(
             con.close()
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     unmatched_path = LOG_DIR / f"rpscrape_unmatched_{stamp}.csv"
     ambiguous_path = LOG_DIR / f"rpscrape_ambiguous_{stamp}.csv"
     summary_path = LOG_DIR / f"rpscrape_enrich_{stamp}.json"

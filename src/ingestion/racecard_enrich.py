@@ -142,7 +142,7 @@ def enrich_from_racecards(
     target_date: date,
     dry_run: bool = False,
 ) -> dict[str, int]:
-    with open(racecard_json_path, "r") as f:
+    with open(racecard_json_path) as f:
         races_data: list[dict] = json.load(f)
 
     if not races_data:

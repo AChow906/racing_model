@@ -24,7 +24,7 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from pipelines.agent_tools import TOOL_SCHEMAS, dispatch, DB_PATH
+from pipelines.agent_tools import DB_PATH, TOOL_SCHEMAS, dispatch
 
 VALID_TOOL_NAMES = {t["function"]["name"] for t in TOOL_SCHEMAS}
 

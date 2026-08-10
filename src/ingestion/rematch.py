@@ -6,7 +6,7 @@ import json
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -18,8 +18,8 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ingestion.normalise import normalise_course, normalise_horse, slugify
 from ingestion.db_connect import get_db
+from ingestion.normalise import normalise_course, normalise_horse, slugify
 from ingestion.rpscrape_enrich import _load_rpscrape_rows
 from quality.checks import ensure_standard_race_flag
 
@@ -464,7 +464,7 @@ def run_rematch(db_path: Path, input_glob: str, dry_run: bool = False, year: int
                 )
 
             audit_payload = []
-            now_utc = datetime.now(timezone.utc)
+            now_utc = datetime.now(UTC)
             for i, row in enumerate(audit_rows, start=1):
                 payload = dict(row)
                 payload["audit_id"] = i
@@ -518,7 +518,7 @@ def run_rematch(db_path: Path, input_glob: str, dry_run: bool = False, year: int
             con.close()
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+    stamp = datetime.now(UTC).strftime("%Y%m%d")
     out_path = LOG_DIR / f"rematch_results_{stamp}.csv"
     fuzzy_path = LOG_DIR / f"rematch_fuzzy_sample_{stamp}.csv"
 

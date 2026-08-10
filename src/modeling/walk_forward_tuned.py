@@ -1,14 +1,12 @@
-import json
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss
-
-from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
-from src.ingestion.db_connect import get_db
+from src.constants.params import DEFAULT_PARAMS, TUNED_PARAMS
 from src.constants.windows import WALK_FORWARD_WINDOWS as WINDOWS
-from src.constants.params import TUNED_PARAMS, DEFAULT_PARAMS
+from src.ingestion.db_connect import get_db
+from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
 
 
 def run_window(category, window, params):

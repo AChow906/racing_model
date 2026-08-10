@@ -1,16 +1,16 @@
 import json
-import pickle
-from datetime import datetime
-from pathlib import Path
 
 import lightgbm as lgb
-import numpy as np
 import pandas as pd
 from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import brier_score_loss, log_loss
-
-from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate, FLAT_DROP, JUMPS_DROP, EXCLUDE
+from sklearn.metrics import brier_score_loss
 from src.ingestion.db_connect import get_db
+from src.modeling.train_split import (
+    load_data,
+    race_softmax,
+    renormalize,
+    top_pick_win_rate,
+)
 
 WINDOWS = [
     {"train_end": "2021-01-01", "cal_start": "2021-01-01", "cal_end": "2022-01-01", "test_start": "2022-01-01", "test_end": "2023-01-01", "label": "Test 2022"},
@@ -120,7 +120,7 @@ def main():
 
     # Summary table
     print(f"\n{'='*70}", flush=True)
-    print(f"  WALK-FORWARD SUMMARY", flush=True)
+    print("  WALK-FORWARD SUMMARY", flush=True)
     print(f"{'='*70}", flush=True)
 
     for category in ["flat", "jumps"]:
@@ -146,7 +146,7 @@ def main():
     # Save
     with open("experiments/walk_forward_results.json", "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\nSaved: experiments/walk_forward_results.json", flush=True)
+    print("\nSaved: experiments/walk_forward_results.json", flush=True)
 
 
 if __name__ == "__main__":

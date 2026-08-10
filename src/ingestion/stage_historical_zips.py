@@ -5,7 +5,6 @@ import re
 import shutil
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 TARGET_ROOT = ROOT / "data" / "raw" / "betfair_historical"
 

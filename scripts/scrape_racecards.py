@@ -167,7 +167,7 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
             race_urls.append(race.get("raceUrl", ""))
 
     print(f"  Found {len(races_out)} races across {len(meetings)} meetings", flush=True)
-    print(f"  Fetching individual race pages for prize money + runners...", flush=True)
+    print("  Fetching individual race pages for prize money + runners...", flush=True)
 
     for i, (race_entry, race_url) in enumerate(zip(races_out, race_urls)):
         if not race_url:

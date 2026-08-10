@@ -8,7 +8,6 @@ cheap and never risks a circular import.
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from fractions import Fraction
 from pathlib import Path
 
 import pandas as pd

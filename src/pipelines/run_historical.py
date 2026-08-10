@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
@@ -17,6 +17,7 @@ from ingestion.rematch import run_rematch
 from ingestion.rpscrape_enrich import enrich_from_rpscrape
 from quality.checks import ensure_standard_race_flag, run_all_checks
 from quality.leakage_guard import check_no_leakage
+
 DB_PATH = ROOT / "racing.duckdb"
 
 
@@ -159,7 +160,7 @@ def run_pipeline() -> None:
         con2.close()
 
     print("Historical pipeline summary")
-    print(f"started_utc={datetime.now(timezone.utc).isoformat()}")
+    print(f"started_utc={datetime.now(UTC).isoformat()}")
     print(f"duration_sec={round(time.time() - started, 3)}")
     print(f"rps_enrich_summary={rps_enrich_summary}")
     print(f"rematch_summary={rematch_summary}")

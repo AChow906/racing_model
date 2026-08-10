@@ -28,23 +28,23 @@ from pathlib import Path
 
 import lightgbm as lgb
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import brier_score_loss
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ingestion.db_connect import get_db
-from constants.features import EXCLUDE, FLAT_DROP, JUMPS_DROP, FLAT_V2_FEATURES
+from constants.features import EXCLUDE, FLAT_DROP, JUMPS_DROP
+from constants.params import CATBOOST_FLAT_PARAMS, DEFAULT_PARAMS, TUNED_PARAMS
 from constants.windows import WALK_FORWARD_WINDOWS
-from constants.params import TUNED_PARAMS, DEFAULT_PARAMS, CATBOOST_FLAT_PARAMS
+from ingestion.db_connect import get_db
 
 DB_PATH = os.environ.get("RACING_DB", str(ROOT / "racing.duckdb"))
 MODELS_DIR = ROOT / "models"
@@ -112,7 +112,6 @@ def top_pick_win_rate(probs, race_ids, y_true):
 
 def score_category(start_date, end_date, category, params="tuned"):
     """Score a date range with a pre-trained model. Returns bets DataFrame."""
-    from modeling.train_split import load_data
 
     db = get_db(DB_PATH)
     type_filter = "AND ra.race_type = 'Flat'" if category == "flat" else "AND ra.race_type IN ('Chase', 'Hurdle', 'NH Flat')"
@@ -617,7 +616,7 @@ def print_summary(bets, min_edge, out_dir=None):
                 p(f"\n  {'Month':<10} {'Bets':>6} {'Wins':>5} {'P&L':>9} {'ROI':>7} {'Cumulative':>11}")
                 p(f"  {'-'*52}")
                 for _, row in monthly.iterrows():
-                    p(f"  {str(row['date']):<10} {row['bets']:>6} {int(row['wins']):>5} £{row['pnl']:>+8.0f} {row['roi']:>+6.1%} £{row['cum']:>+10.0f}")
+                    p(f"  {row['date']!s:<10} {row['bets']:>6} {int(row['wins']):>5} £{row['pnl']:>+8.0f} {row['roi']:>+6.1%} £{row['cum']:>+10.0f}")
 
     # Combined
     if len(vb["category"].unique()) > 1 and len(vb) > 0:

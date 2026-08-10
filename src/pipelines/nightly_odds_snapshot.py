@@ -1,25 +1,23 @@
 from __future__ import annotations
 
+import json
 import os
 import sys
 import time
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ingestion.betfair_client import BetfairClient, BetfairCredentials  # noqa: E402
-from ingestion.betfair_ingest import (  # noqa: E402
+from ingestion.betfair_client import BetfairClient, BetfairCredentials
+from ingestion.betfair_ingest import (
     insert_odds_snapshots_to_duckdb,
     normalize_betfair_price,
     save_race_snapshot_to_parquet,
 )
-
 
 DB_PATH = Path(os.getenv("DB_PATH", ROOT / "racing.duckdb"))
 LOG_DIR = ROOT / "logs"
@@ -73,7 +71,7 @@ def _fetch_market_books_safe(client: BetfairClient, market_ids: list[str]) -> di
 def run(snapshot_label: str, hours_ahead: int = 24) -> dict:
     started = time.time()
     client = _load_client()
-    snapshot_utc = datetime.now(timezone.utc)
+    snapshot_utc = datetime.now(UTC)
 
     markets = client.list_win_markets(from_hours=0, to_hours=hours_ahead)
     market_ids = [m["marketId"] for m in markets]
@@ -153,7 +151,7 @@ def run(snapshot_label: str, hours_ahead: int = 24) -> dict:
         "duration_sec": duration,
     }
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    run_log_path = LOG_DIR / f"odds_snapshot_run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    run_log_path = LOG_DIR / f"odds_snapshot_run_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
     run_log_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     result["log_file"] = str(run_log_path)
     print(result)

@@ -11,9 +11,9 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from ingestion.db_connect import get_db
 from quality.checks import run_all_checks
 from quality.leakage_guard import check_no_leakage
-from ingestion.db_connect import get_db
 
 DB_PATH = ROOT / "racing.duckdb"
 SQL_DIR = ROOT / "sql" / "features"

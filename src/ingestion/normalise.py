@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import re
 import logging
-from datetime import datetime, timedelta, timezone
+import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import duckdb
 import pandas as pd
 import yaml
-
 
 LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[2]
@@ -186,23 +185,23 @@ def normalise_horse(name: str | None) -> str:
 def parse_utc(value: Any) -> datetime:
     if isinstance(value, datetime):
         if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc)
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
     if value is None:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     text = str(value).strip()
     if text.endswith("Z"):
         text = text.replace("Z", "+00:00")
     dt = datetime.fromisoformat(text)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def decision_cutoff_for_off_time(scheduled_off_utc: datetime) -> datetime:
     off = parse_utc(scheduled_off_utc)
     evening_before = (off - timedelta(days=1)).date()
-    return datetime(evening_before.year, evening_before.month, evening_before.day, 21, 0, 0, tzinfo=timezone.utc)
+    return datetime(evening_before.year, evening_before.month, evening_before.day, 21, 0, 0, tzinfo=UTC)
 
 
 def canonical_race_id_from_market(market_id: str) -> str:

@@ -1,0 +1,33 @@
+target-version = "py312"
+line-length = 120
+src = ["src", "scripts"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",   # line length - handled by formatter if we add it later
+    "E701",   # single-line if/continue - used in compact data loops
+    "E702",   # semicolons - used intentionally for compact data lines
+    "E712",   # == True/False - needed for pandas boolean column filtering
+    "SIM105", # contextlib.suppress - try/except/pass is often clearer
+    "SIM103", # return bool() - less readable with 3-way returns (None/True/False)
+    "SIM108", # ternary operator - often less readable
+    "SIM113", # enumerate for counter - not always applicable
+    "RUF005", # list unpacking vs concatenation - style preference
+    "RUF059", # unused unpacked vars - common in data pipeline destructuring
+    "B905",   # zip strict - not needed for matched-length data columns
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"scripts/*" = ["E402"]
+"src/ingestion/*" = ["E402"]
+"src/pipelines/*" = ["E402"]

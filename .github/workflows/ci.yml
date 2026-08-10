@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+
+  import-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Verify key modules import cleanly
+        env:
+          PYTHONPATH: src
+        run: |
+          python -c "
+          from src.constants.features import EXCLUDE
+          from src.constants.params import DEFAULT_PARAMS
+          from src.constants.windows import WALK_FORWARD_WINDOWS
+          from src.ingestion.normalise import normalise_course
+          from src.ingestion.db_connect import get_db
+          from src.quality.checks import run_all_checks
+          from src.quality.leakage_guard import check_no_leakage
+          from src.modeling.calibrate import calibrate
+          print('All imports OK')
+          "
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified

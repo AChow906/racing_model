@@ -373,7 +373,7 @@ def print_top_picks_single_day(pnl: pd.DataFrame, target_date: date) -> None:
             pnl_back_str = f"{r['profit']:+.2f}"
             pnl_bsp_str = f"{r['profit_bsp']:+.2f}"
             line = f"  {horse:<22} {course:<12} {time_str:<6} {back:>5} {sp:>6} {won_str:>3} {pnl_back_str:>8} {pnl_bsp_str:>8}"
-            if has_bbo:
+            if has_fcst:
                 fc_odds = decimal_to_fractional(r['forecast_odds']) if pd.notna(r.get("forecast_odds")) else "-"
                 fc_pnl = f"{r['profit_forecast']:+.2f}"
                 line += f" {fc_odds:>6} {fc_pnl:>8}"
@@ -381,7 +381,7 @@ def print_top_picks_single_day(pnl: pd.DataFrame, target_date: date) -> None:
 
         _print_tp_category_summary(cat_settled, cat.upper())
 
-    print(f"  {'='*(84 if has_bbo else 70)}")
+    print(f"  {'='*(84 if has_fcst else 70)}")
     _print_tp_category_summary(settled, "TOTAL")
 
 
@@ -489,7 +489,7 @@ def main() -> None:
         if not pnl.empty and pnl["settled"].any():
             has_any_settled = True
             print(f"\n  {'='*70}")
-            print(f"  VALUE BETS  (edge-filtered, settled at back odds)")
+            print("  VALUE BETS  (edge-filtered, settled at back odds)")
             print(f"  {'='*70}")
             if single_day:
                 print_single_day(pnl, date_from)
@@ -502,7 +502,7 @@ def main() -> None:
         if not tp_pnl.empty and tp_pnl["settled"].any():
             has_any_settled = True
             print(f"\n  {'='*70}")
-            print(f"  TOP PICKS  (model #1 per race)")
+            print("  TOP PICKS  (model #1 per race)")
             print(f"  {'='*70}")
             if single_day:
                 print_top_picks_single_day(tp_pnl, date_from)

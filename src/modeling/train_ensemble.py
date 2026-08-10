@@ -3,14 +3,13 @@ import pickle
 from datetime import datetime
 from pathlib import Path
 
-import lightgbm as lgb
-import xgboost as xgb
 import catboost as cb
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn.metrics import brier_score_loss, log_loss
+import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
-
+from sklearn.metrics import brier_score_loss, log_loss
 from src.ingestion.db_connect import get_db
 
 TRAIN_START = "2015-01-01"
@@ -239,8 +238,6 @@ def main():
     with open(f"models/{run_id}_meta.pkl", "wb") as f:
         pickle.dump(meta_model, f)
 
-    best_probs = ensemble_probs
-    best_name = "StackedEnsemble"
     meta = {
         "run_id": run_id,
         "split": {"train": [TRAIN_START, TRAIN_END], "stack": [STACK_START, STACK_END], "test": [TEST_START, TEST_END]},

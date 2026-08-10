@@ -7,7 +7,6 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 RAW_RPS_DIR = ROOT / "data" / "raw" / "rpscrape"
 DEST_ROOT = RAW_RPS_DIR / "by_year_month"

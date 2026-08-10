@@ -1,15 +1,11 @@
-import optuna
-import lightgbm as lgb
-import numpy as np
-import pandas as pd
 import json
-from datetime import datetime
-from pathlib import Path
-from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import brier_score_loss
 
-from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
+import lightgbm as lgb
+import optuna
+import pandas as pd
+from sklearn.isotonic import IsotonicRegression
 from src.ingestion.db_connect import get_db
+from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -115,12 +111,12 @@ def main():
         print(f"  Bets: {best.user_attrs['n_bets']:,}", flush=True)
         print(f"  P&L: £{best.user_attrs['pnl']:+,.0f}", flush=True)
         print(f"  Trees: {best.user_attrs['best_iter']}", flush=True)
-        print(f"  Params:", flush=True)
+        print("  Params:", flush=True)
         for k, v in best.params.items():
             print(f"    {k}: {v}", flush=True)
 
         # Show top 5 trials
-        print(f"\n  Top 5 trials:", flush=True)
+        print("\n  Top 5 trials:", flush=True)
         print(f"  {'#':<4} {'ROI':>7} {'TopPick':>8} {'Bets':>6} {'P&L':>8}", flush=True)
         sorted_trials = sorted(study.trials, key=lambda t: t.value if t.value is not None else -999, reverse=True)
         for t in sorted_trials[:5]:
@@ -137,7 +133,7 @@ def main():
 
     # Compare defaults vs tuned
     print(f"\n{'='*60}", flush=True)
-    print(f"  DEFAULT vs TUNED COMPARISON", flush=True)
+    print("  DEFAULT vs TUNED COMPARISON", flush=True)
     print(f"{'='*60}", flush=True)
     for cat in ["flat", "jumps"]:
         r = results[cat]
@@ -145,7 +141,7 @@ def main():
 
     with open("experiments/optuna_results.json", "w") as f:
         json.dump(results, f, indent=2, default=str)
-    print(f"\nSaved: experiments/optuna_results.json", flush=True)
+    print("\nSaved: experiments/optuna_results.json", flush=True)
 
 
 if __name__ == "__main__":

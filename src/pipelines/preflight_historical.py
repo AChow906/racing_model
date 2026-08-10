@@ -5,9 +5,7 @@ import json
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import date
-from datetime import datetime, timezone
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -16,9 +14,9 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ingestion.rpscrape_enrich import enrich_from_rpscrape
 from ingestion.db_connect import get_db
 from ingestion.rematch import run_rematch
+from ingestion.rpscrape_enrich import enrich_from_rpscrape
 from quality.checks import run_all_checks
 
 DB_PATH = ROOT / "racing.duckdb"
@@ -279,7 +277,7 @@ def main() -> None:
     gate = _evaluate_gates(rps_summary, dq_ok, thresholds, require_rps=args.require_rps)
 
     payload = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "countries": list(countries),
         "window": {
             "start_year": args.start_year,
@@ -304,7 +302,7 @@ def main() -> None:
     }
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = LOG_DIR / f"preflight_historical_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    log_path = LOG_DIR / f"preflight_historical_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
     log_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     print(json.dumps(payload, indent=2))

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -14,7 +14,6 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from ingestion.db_connect import get_db
-
 
 DB_PATH = ROOT / "racing.duckdb"
 
@@ -44,7 +43,7 @@ def load_rpscrape_raw(db_path: Path, input_glob: str) -> dict[str, int]:
                 "trainer": frame[cols["trainer"]].astype(str),
                 "jockey": frame[cols["jockey"]].astype(str),
                 "source_file": str(file_path.relative_to(ROOT)),
-                "loaded_at_utc": datetime.now(timezone.utc),
+                "loaded_at_utc": datetime.now(UTC),
             }
         )
         frames.append(view)

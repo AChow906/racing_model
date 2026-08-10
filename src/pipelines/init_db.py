@@ -6,7 +6,6 @@ from pathlib import Path
 
 import duckdb
 
-
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB_PATH = ROOT / "racing.duckdb"
 SCHEMA_PATH = ROOT / "sql" / "schema" / "001_create_tables.sql"

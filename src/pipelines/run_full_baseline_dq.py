@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
-from datetime import datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +26,7 @@ def main() -> None:
     db_path = Path(args.db_path)
     min_race_date = date(args.min_year, args.min_month, args.min_day)
 
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+    stamp = datetime.now(UTC).strftime("%Y%m%d")
     source_report = ROOT / "logs" / f"dq_report_{stamp}.txt"
     baseline_report = ROOT / "logs" / f"dq_report_full_baseline_{stamp}.txt"
 
@@ -47,7 +46,7 @@ def main() -> None:
     header = [
         "FULL BASELINE SNAPSHOT",
         f"Status: {status}",
-        f"Generated UTC: {datetime.now(timezone.utc).isoformat()}",
+        f"Generated UTC: {datetime.now(UTC).isoformat()}",
         f"Scope: races on/after {min_race_date.isoformat()}",
         f"Source: {source_report.relative_to(ROOT)}",
     ]

@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
 
 import duckdb
 import pandas as pd
-
 
 RAW_ROOT = Path("data/raw/odds_snapshots")
 
 
 def _month_partition(ts: datetime) -> Path:
-    ts = ts.astimezone(timezone.utc)
+    ts = ts.astimezone(UTC)
     return RAW_ROOT / f"{ts.year:04d}" / f"{ts.month:02d}" / f"{ts.day:02d}"
 
 
@@ -34,11 +33,11 @@ def save_race_snapshot_to_parquet(
     if df.empty:
         raise ValueError("No rows provided for snapshot")
 
-    snapshot_utc = snapshot_time_utc.astimezone(timezone.utc)
+    snapshot_utc = snapshot_time_utc.astimezone(UTC)
     df["snapshot_timestamp_utc"] = snapshot_utc
     df["snapshot_label"] = snapshot_label
     if "ingest_timestamp_utc" not in df.columns:
-        df["ingest_timestamp_utc"] = datetime.now(timezone.utc)
+        df["ingest_timestamp_utc"] = datetime.now(UTC)
 
     out_path = partition / f"{snapshot_label}_{race_id}.parquet"
 
@@ -88,7 +87,7 @@ def normalize_betfair_price(row: dict) -> dict:
         "market_status": row.get("market_status"),
         "event_timestamp_utc": snapshot_ts,
         "decision_cutoff_utc": row.get("decision_cutoff_utc") or snapshot_ts,
-        "ingest_timestamp_utc": datetime.now(timezone.utc),
+        "ingest_timestamp_utc": datetime.now(UTC),
     }
 
 

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import requests
-
 
 IDENTITY_CERT_URL = "https://identitysso-cert.betfair.com/api/certlogin"
 BETTING_URL_UK = "https://api.betfair.com/exchange/betting/json-rpc/v1"
@@ -56,7 +55,7 @@ class BetfairClient:
     def list_win_markets(self, from_hours: int = 0, to_hours: int = 6) -> list[dict[str, Any]]:
         self._ensure_logged_in()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         start = now + timedelta(hours=from_hours)
         end = now + timedelta(hours=to_hours)
 

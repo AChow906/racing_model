@@ -36,9 +36,9 @@ if str(SRC_ROOT) not in sys.path:
 
 load_dotenv(ROOT / ".env")
 
-from pipelines.daily_predictions import fetch_race_cards, fetch_live_odds
-from pipelines.ai_agents import generate_reviewed_pick_note
 from pipelines import publish_discord
+from pipelines.ai_agents import generate_reviewed_pick_note
+from pipelines.daily_predictions import fetch_live_odds, fetch_race_cards
 from pipelines.helpers import BETS_LOG_COLS
 
 BETS_LOG = ROOT / "logs" / "daily_bets.csv"

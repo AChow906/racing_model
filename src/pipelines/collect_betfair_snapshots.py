@@ -4,14 +4,12 @@ import argparse
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from pipelines.nightly_odds_snapshot import run  # noqa: E402
-
+from pipelines.nightly_odds_snapshot import run
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Collect Betfair odds snapshots and persist to Parquet + DuckDB")

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -13,7 +12,7 @@ class FetchResult:
     url: str
     ok: bool
     status_code: int
-    html: Optional[str]
+    html: str | None
 
 
 def fetch_html(url: str, source: str, timeout: int = 20) -> FetchResult:

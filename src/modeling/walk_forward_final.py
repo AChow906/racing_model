@@ -1,14 +1,14 @@
 import json
+
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import lightgbm as lgb
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss
-
-from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
-from src.ingestion.db_connect import get_db
-from src.constants.windows import WALK_FORWARD_WINDOWS as WINDOWS
 from src.constants.params import TUNED_PARAMS as PARAMS
+from src.constants.windows import WALK_FORWARD_WINDOWS as WINDOWS
+from src.ingestion.db_connect import get_db
+from src.modeling.train_split import load_data, race_softmax, renormalize, top_pick_win_rate
 
 
 def run_window(category, window):
@@ -100,7 +100,7 @@ def main():
         all_results[category] = cat_results
 
     print(f"\n{'='*70}", flush=True)
-    print(f"  FINAL RESULTS — TUNED PARAMS", flush=True)
+    print("  FINAL RESULTS — TUNED PARAMS", flush=True)
     print(f"{'='*70}", flush=True)
 
     grand_total_bets = 0
@@ -143,7 +143,7 @@ def main():
 
     with open("experiments/walk_forward_final.json", "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\n  Saved: experiments/walk_forward_final.json", flush=True)
+    print("\n  Saved: experiments/walk_forward_final.json", flush=True)
 
 
 if __name__ == "__main__":
