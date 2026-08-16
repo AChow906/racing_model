@@ -19,6 +19,28 @@ YESTERDAY_MONTH=$(echo "$YESTERDAY" | cut -d- -f2 | sed 's/^0//')
 RPSCRAPE_DIR="$PROJECT_DIR/data/raw/rpscrape_repo/scripts"
 RPSCRAPE_PYTHON=python
 
+# Days back to re-scrape so late-published RPR gets captured. Racing Post assigns RPR
+# 1-3 days after a race, so the most recent days always scrape with partial RPR;
+# re-scraping D-2..D-4 each run backfills them once RP finalises the ratings.
+RPR_RESCRAPE_LAG_DAYS="2 3 4"
+CACHE_PROGRESS_DIR="$PROJECT_DIR/data/raw/rpscrape_repo/.cache/progress"
+
+# Scrape one day (GB + IRE) fresh. rpscrape keeps a .progress checkpoint per day and
+# otherwise "resumes after" the last race scraped — a re-run would fetch nothing and
+# write an empty CSV. Clearing the checkpoint first forces a full re-scrape so newly
+# published RPR actually lands.
+rescrape_day() {
+    local iso="$1"
+    local slash under
+    slash=$(echo "$iso" | tr '-' '/')
+    under=$(echo "$iso" | tr '-' '_')
+    find "$CACHE_PROGRESS_DIR" -name "${under}.progress" -delete 2>/dev/null || true
+    (cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$slash" -r gb)  || echo "  WARNING: rpscrape GB failed for $iso"
+    sleep 6
+    (cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$slash" -r ire) || echo "  WARNING: rpscrape IRE failed for $iso"
+    sleep 6
+}
+
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 echo "=========================================="
 echo "  Daily Racing Pipeline — $TIMESTAMP"
@@ -31,15 +53,15 @@ $VENV_PYTHON -m src.pipelines.collect_results --date yesterday || {
     echo "  WARNING: Results collection failed (CSV may not be available yet)"
 }
 
-# 2. Scrape yesterday's rpscrape data (GB + IRE)
+# 2. Scrape yesterday, then re-scrape recent days so late-published RPR gets backfilled.
 echo ""
-echo "[2/9] Scraping yesterday's Racing Post data..."
-(cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$YESTERDAY_SLASH" -r gb) || {
-    echo "  WARNING: rpscrape GB failed (data may not be available yet)"
-}
-(cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$YESTERDAY_SLASH" -r ire) || {
-    echo "  WARNING: rpscrape IRE failed (data may not be available yet)"
-}
+echo "[2/9] Scraping Racing Post results (yesterday + RPR catch-up)..."
+rescrape_day "$YESTERDAY"
+for lag in $RPR_RESCRAPE_LAG_DAYS; do
+    catchup_date=$(date -v-"${lag}"d '+%Y-%m-%d')
+    echo "  RPR catch-up: re-scraping $catchup_date..."
+    rescrape_day "$catchup_date"
+done
 
 # 3. Ingest yesterday's SP CSV to populate horse_history
 echo ""
