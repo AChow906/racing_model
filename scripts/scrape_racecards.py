@@ -141,7 +141,7 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
     race_urls: list[str] = []
 
     for meeting in meetings:
-        course = meeting.get("courseName", "")
+        meeting_course = meeting.get("courseName", "")
         going_raw = meeting.get("goingDetails", "")
         going = _parse_going(going_raw)
         surface = _get_surface(going)
@@ -152,7 +152,7 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
 
             raw_class = race.get("raceClass")
             race_entry = {
-                "course": course,
+                "course": race.get("courseStyleName") or meeting_course,
                 "off_time": race.get("raceStart", ""),
                 "going": going,
                 "distance_f": _parse_distance_furlongs(race.get("displayDistance", "")),
@@ -173,6 +173,9 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
         if not race_url:
             continue
 
+        if race_url.startswith("/results/"):
+            continue
+
         time.sleep(1)
         content = _fetch_with_retry(client, f"{BASE_URL}{race_url}")
         if not content:
@@ -182,17 +185,22 @@ def scrape_racecards(target_date: date, client: NetworkClient) -> list[dict]:
         if not page_data:
             continue
 
-        race_page = (page_data.get("props", {}).get("pageProps", {})
-                     .get("initialState", {}).get("racePage", {}).get("data", {}))
+        initial_state = ((page_data.get("props") or {}).get("pageProps") or {}
+                         ).get("initialState") or {}
+        race_page = (initial_state.get("racePage") or {}).get("data") or {}
+        if not race_page:
+            print(f"  No racePage.data for {race_url} "
+                  f"(initialState keys: {list(initial_state.keys())})", flush=True)
+            continue
 
-        race_info = race_page.get("race", {})
+        race_info = race_page.get("race") or {}
         prizes = race_info.get("prizes", [])
         if prizes:
             winner_prize = prizes[0].get("prize_sterling")
             if winner_prize is not None:
                 race_entry["prize_money_gbp"] = float(winner_prize)
 
-        runners_data = race_page.get("runners", {})
+        runners_data = race_page.get("runners") or {}
         if isinstance(runners_data, dict):
             runners_data = list(runners_data.values())
         for runner in runners_data:
