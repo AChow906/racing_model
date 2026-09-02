@@ -17,7 +17,11 @@ YESTERDAY_SLASH=$(echo "$YESTERDAY" | tr '-' '/')
 YESTERDAY_YEAR=${YESTERDAY%%-*}
 YESTERDAY_MONTH=$(echo "$YESTERDAY" | cut -d- -f2 | sed 's/^0//')
 RPSCRAPE_DIR="$PROJECT_DIR/data/raw/rpscrape_repo/scripts"
-RPSCRAPE_PYTHON=python
+RPSCRAPE_PYTHON="$PROJECT_DIR/.venv/bin/python"
+if [ ! -x "$RPSCRAPE_PYTHON" ]; then
+    echo "ERROR: rpscrape virtualenv not found at $RPSCRAPE_PYTHON" >&2
+    exit 1
+fi
 
 # Days back to re-scrape so late-published RPR gets captured. Racing Post assigns RPR
 # 1-3 days after a race, so the most recent days always scrape with partial RPR;
@@ -35,9 +39,10 @@ rescrape_day() {
     slash=$(echo "$iso" | tr '-' '/')
     under=$(echo "$iso" | tr '-' '_')
     find "$CACHE_PROGRESS_DIR" -name "${under}.progress" -delete 2>/dev/null || true
-    (cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$slash" -r gb)  || echo "  WARNING: rpscrape GB failed for $iso"
+    find "$PROJECT_DIR/data/raw/rpscrape_repo/data/region" -type f \( -path "*/gb/*/${under}.csv" -o -path "*/gb/all/${under}.csv" -o -path "*/ire/*/${under}.csv" -o -path "*/ire/all/${under}.csv" \) -delete 2>/dev/null || true
+    (cd "$RPSCRAPE_DIR" && "$RPSCRAPE_PYTHON" rpscrape.py -d "$slash" -r gb) || echo "  WARNING: rpscrape GB failed for $iso"
     sleep 6
-    (cd "$RPSCRAPE_DIR" && $RPSCRAPE_PYTHON rpscrape.py -d "$slash" -r ire) || echo "  WARNING: rpscrape IRE failed for $iso"
+    (cd "$RPSCRAPE_DIR" && "$RPSCRAPE_PYTHON" rpscrape.py -d "$slash" -r ire) || echo "  WARNING: rpscrape IRE failed for $iso"
     sleep 6
 }
 
