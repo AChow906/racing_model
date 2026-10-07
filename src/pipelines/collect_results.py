@@ -117,6 +117,7 @@ def parse_sp_csv(csv_text: str, source_filename: str) -> list[dict[str, Any]]:
         bsp = _safe_float(lowered.get("bsp"))
 
         rows.append({
+            "event_id": str(lowered.get("event_id") or "").strip(),
             "compact_horse": _compact(horse_id),
             "sp_decimal": bsp,
             "won": won,
@@ -132,23 +133,24 @@ def update_results_in_db(rows: list[dict[str, Any]], target_date: date, db_path:
     con = get_db(str(db_path))
 
     db_results = con.execute(
-        """SELECT res.result_id, res.horse_id
+        """SELECT res.result_id, res.horse_id, ra.source_race_id
            FROM results res
            JOIN races ra ON res.race_id = ra.race_id
            WHERE ra.race_date = ?""",
         [target_date],
     ).fetchall()
 
-    lookup: dict[str, str] = {}
-    for result_id, horse_id in db_results:
-        lookup[_compact(horse_id)] = result_id
+    lookup: dict[tuple[str, str], str] = {}
+    for result_id, horse_id, source_race_id in db_results:
+        event_id = str(source_race_id or "").strip().removeprefix("1.")
+        lookup[(event_id, _compact(horse_id))] = result_id
 
     updated = 0
     not_found = 0
     already = set()
 
     for row in rows:
-        key = row["compact_horse"]
+        key = (row["event_id"].removeprefix("1."), row["compact_horse"])
         result_id = lookup.get(key)
 
         if result_id and result_id not in already:

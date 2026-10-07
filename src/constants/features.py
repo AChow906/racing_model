@@ -90,6 +90,11 @@ FLAT_V2_FEATURES = [
     "weight_vs_field_avg",
     "weight_vs_top",
     "weight_change_lbs",
+    "rating_vs_last_win_mark",
+    "rating_vs_best_win_mark",
+    "rating_drop_from_post_win_peak",
+    "rating_rise_after_last_win",
+    "days_since_last_win",
     # Race context
     "is_handicap",
     "field_size",

@@ -72,7 +72,7 @@ def load_type(start, end, types):
     df = con.execute(f'''SELECT fs.*, ra.race_type FROM feature_store fs
         JOIN races ra ON fs.race_id = ra.race_id
         JOIN results res ON fs.runner_id = res.runner_id
-        WHERE fs.race_date >= \"{start}\" AND fs.race_date < \"{end}\"
+        WHERE fs.race_date >= DATE '{start}' AND fs.race_date < DATE '{end}'
         AND fs.target IS NOT NULL AND ra.race_type IN ({tl}) {SETTLED}
         ORDER BY fs.race_date, fs.race_id''').df()
     con.close()
@@ -165,7 +165,7 @@ def load_settled(con, start, end, race_type_filter):
         SELECT fs.*, ra.race_type FROM feature_store fs
         JOIN races ra ON fs.race_id = ra.race_id
         JOIN results res ON fs.runner_id = res.runner_id
-        WHERE fs.race_date >= \"{start}\" AND fs.race_date < \"{end}\"
+        WHERE fs.race_date >= DATE '{start}' AND fs.race_date < DATE '{end}'
         AND fs.target IS NOT NULL {race_type_filter} {SETTLED}
         ORDER BY fs.race_date, fs.race_id
     ''').df()

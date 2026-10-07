@@ -38,12 +38,18 @@ def _traded_volume(runner_book: dict) -> float:
 
 
 def _load_client() -> BetfairClient:
+    cert_file = Path(os.environ["BETFAIR_CERT_FILE"]).expanduser()
+    if not cert_file.is_absolute():
+        cert_file = ROOT / cert_file
+    key_file = Path(os.environ["BETFAIR_KEY_FILE"]).expanduser()
+    if not key_file.is_absolute():
+        key_file = ROOT / key_file
     creds = BetfairCredentials(
         app_key=os.environ["BETFAIR_APP_KEY"],
         username=os.environ["BETFAIR_USERNAME"],
         password=os.environ["BETFAIR_PASSWORD"],
-        cert_file=Path(os.environ["BETFAIR_CERT_FILE"]).expanduser(),
-        key_file=Path(os.environ["BETFAIR_KEY_FILE"]).expanduser(),
+        cert_file=cert_file,
+        key_file=key_file,
     )
     return BetfairClient(creds)
 

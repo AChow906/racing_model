@@ -58,6 +58,8 @@ def monthly_zip_path(year: int, month: int) -> Path:
 
 def _historic_client_from_env() -> betfairlightweight.APIClient:
     cert_file = Path(os.environ.get("BETFAIR_CERT_FILE", "")).expanduser()
+    if not cert_file.is_absolute():
+        cert_file = ROOT / cert_file
     cert_dir = cert_file.parent
     client = betfairlightweight.APIClient(
         username=os.environ.get("BETFAIR_USERNAME", ""),
