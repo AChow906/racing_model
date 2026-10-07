@@ -29,6 +29,17 @@ fi
 RPR_RESCRAPE_LAG_DAYS="2 3 4"
 CACHE_PROGRESS_DIR="$PROJECT_DIR/data/raw/rpscrape_repo/.cache/progress"
 
+stage_begin() {
+    STAGE_NAME="$1"
+    STAGE_STARTED_AT=$(date +%s)
+    echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
+}
+
+stage_end() {
+    local elapsed=$(( $(date +%s) - STAGE_STARTED_AT ))
+    echo "  Completed: ${STAGE_NAME} (${elapsed}s / $((elapsed / 60))m $((elapsed % 60))s)"
+}
+
 # Scrape one day (GB + IRE) fresh. rpscrape keeps a .progress checkpoint per day and
 # otherwise "resumes after" the last race scraped — a re-run would fetch nothing and
 # write an empty CSV. Clearing the checkpoint first forces a full re-scrape so newly
@@ -54,41 +65,50 @@ echo "=========================================="
 # 1. Collect yesterday's results (SP + won status)
 echo ""
 echo "[1/9] Collecting yesterday's results..."
+stage_begin "Collecting yesterday's results"
 $VENV_PYTHON -m src.pipelines.collect_results --date yesterday || {
     echo "  WARNING: Results collection failed (CSV may not be available yet)"
 }
+stage_end
 
 # 2. Scrape yesterday, then re-scrape recent days so late-published RPR gets backfilled.
 echo ""
 echo "[2/9] Scraping Racing Post results (yesterday + RPR catch-up)..."
+stage_begin "Scraping Racing Post results"
 rescrape_day "$YESTERDAY"
 for lag in $RPR_RESCRAPE_LAG_DAYS; do
     catchup_date=$(date -v-"${lag}"d '+%Y-%m-%d')
     echo "  RPR catch-up: re-scraping $catchup_date..."
     rescrape_day "$catchup_date"
 done
+stage_end
 
 # 3. Ingest yesterday's SP CSV to populate horse_history
 echo ""
 echo "[3/9] Ingesting SP history for horse_history..."
+stage_begin "Ingesting SP history"
 $VENV_PYTHON -m src.ingestion.betfair_historical \
     --use-sp-history --sp-include pricesukwin,pricesirewin \
     --start-year "$YESTERDAY_YEAR" --start-month "$YESTERDAY_MONTH" \
     --end-year "$YESTERDAY_YEAR" --end-month "$YESTERDAY_MONTH" || {
     echo "  WARNING: SP history ingestion failed"
 }
+stage_end
 
 # 4. Enrich runners and horse_history with rpscrape data
 echo ""
 echo "[4/9] Enriching with rpscrape data..."
+stage_begin "Enriching with rpscrape data"
 $VENV_PYTHON -m src.ingestion.rpscrape_enrich \
     --input-glob "data/raw/rpscrape_repo/data/region/*/all/*.csv" || {
     echo "  WARNING: rpscrape enrichment failed"
 }
+stage_end
 
 # 5. Backfill horse_history distance/going from enriched races
 echo ""
 echo "[5/9] Backfilling horse_history from races..."
+stage_begin "Backfilling horse_history"
 $VENV_PYTHON -c "
 import sys; sys.path.insert(0, 'src')
 from ingestion.db_connect import get_db
@@ -108,32 +128,41 @@ con.close()
 " || {
     echo "  WARNING: horse_history backfill failed"
 }
+stage_end
 
 # 6. Update P&L tracker
 echo ""
 echo "[6/9] Updating P&L tracker..."
+stage_begin "Updating P&L tracker"
 $VENV_PYTHON -m src.pipelines.track_pnl || {
     echo "  WARNING: P&L update failed (no bets logged yet?)"
 }
+stage_end
 
 # 7. Scrape today's racecards from Racing Post
 echo ""
 echo "[7/9] Scraping today's racecards..."
+stage_begin "Scraping today's racecards"
 $RPSCRAPE_PYTHON "$PROJECT_DIR/scripts/scrape_racecards.py" --date today || {
     echo "  WARNING: Racecard scrape failed (scoring will proceed without enrichment)"
 }
+stage_end
 
 # 8. Fetch today's cards, enrich with racecards, and score
 echo ""
 echo "[8/9] Scoring today's races..."
+stage_begin "Scoring today's races"
 $VENV_PYTHON -m src.pipelines.daily_predictions --date today
+stage_end
 
 # 9. AI analysis + publish to Discord (picks + yesterday's results)
 echo ""
 echo "[9/9] Publishing to Discord..."
+stage_begin "Publishing to Discord"
 $VENV_PYTHON -m src.pipelines.publish_discord --date today || {
     echo "  WARNING: Discord publish failed (check bot token / channel IDs / LLM key)"
 }
+stage_end
 
 echo ""
 echo "=========================================="

@@ -36,10 +36,90 @@ from ingestion.normalise import (
 )
 
 RAW_DIR = ROOT / "data" / "raw" / "betfair_historical"
+SP_CHECKPOINT_PATH = RAW_DIR / "sp_history" / ".ingestion_checkpoint.json"
 DB_PATH = Path(os.getenv("DB_PATH", ROOT / "racing.duckdb"))
 SP_HISTORY_INDEX_URL = "https://promo.betfair.com/betfairsp/prices"
 SP_FILE_PATTERN = re.compile(r'href="(/betfairsp/prices/([^"]+\.csv))"', re.IGNORECASE)
 SP_DATE_PATTERN = re.compile(r"(\d{2})(\d{2})(\d{4})\.csv$", re.IGNORECASE)
+
+
+def _sp_file_fingerprint(path: Path) -> dict[str, Any]:
+    stat = path.stat()
+    return {
+        "size": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+    }
+
+
+def _load_sp_checkpoint() -> dict[str, Any]:
+    if not SP_CHECKPOINT_PATH.exists():
+        return {}
+    try:
+        payload = json.loads(SP_CHECKPOINT_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _save_sp_checkpoint(checkpoint: dict[str, Any]) -> None:
+    SP_CHECKPOINT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temporary = SP_CHECKPOINT_PATH.with_suffix(".tmp")
+    temporary.write_text(json.dumps(checkpoint, indent=2, sort_keys=True), encoding="utf-8")
+    temporary.replace(SP_CHECKPOINT_PATH)
+
+
+def _checkpoint_entry(path: Path) -> dict[str, Any] | None:
+    entry = _load_sp_checkpoint().get(str(path))
+    if not isinstance(entry, dict):
+        return None
+    fingerprint = entry.get("fingerprint")
+    return entry if isinstance(fingerprint, dict) else None
+
+
+def _checkpoint_is_current(path: Path, checkpoint: dict[str, Any]) -> bool:
+    entry = checkpoint.get(str(path))
+    return (
+        isinstance(entry, dict)
+        and entry.get("fingerprint") == _sp_file_fingerprint(path)
+        and entry.get("status") in {"parsed", "already_parsed"}
+    )
+
+
+def _record_sp_checkpoint(
+    checkpoint: dict[str, Any],
+    path: Path,
+    parse_info: dict[str, Any],
+) -> None:
+    checkpoint[str(path)] = {
+        "filename": path.name,
+        "fingerprint": _sp_file_fingerprint(path),
+        "processed_at_utc": datetime.now(UTC).isoformat(),
+        "status": parse_info.get("status"),
+        "raw_records": parse_info.get("raw_records", 0),
+        "failed_records": parse_info.get("failed_records", 0),
+        "inserted": parse_info.get("inserted", {}),
+    }
+
+
+def _mark_changed_races(con: duckdb.DuckDBPyConnection, race_ids: Iterable[str]) -> None:
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ingestion_changed_races (
+            race_id VARCHAR PRIMARY KEY,
+            changed_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+    unique_ids = sorted({race_id for race_id in race_ids if race_id})
+    if unique_ids:
+        con.executemany(
+            """
+            INSERT INTO ingestion_changed_races (race_id)
+            VALUES (?)
+            ON CONFLICT (race_id) DO UPDATE SET changed_at_utc = NOW()
+            """,
+            [(race_id,) for race_id in unique_ids],
+        )
 
 
 def month_iter(start_year: int, start_month: int, end_year: int, end_month: int) -> Iterable[tuple[int, int]]:
@@ -473,10 +553,6 @@ def parse_sp_csv_to_duckdb(csv_path: Path) -> dict[str, Any]:
     if not csv_path.exists():
         return {"status": "missing_csv", "file": str(csv_path)}
 
-    done_marker = csv_path.with_suffix(".csv.done")
-    if done_marker.exists():
-        return {"status": "already_parsed", "file": str(csv_path)}
-
     started = time.time()
     text = csv_path.read_text(encoding="utf-8", errors="ignore")
     normalised = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -527,6 +603,7 @@ def parse_sp_csv_to_duckdb(csv_path: Path) -> dict[str, Any]:
 
     con = duckdb.connect(str(DB_PATH))
     try:
+        _mark_changed_races(con, (race["race_id"] for race in races))
         inserted = {
             "races": upsert_ignore(con, "races", races, [
                 "race_id", "source_race_id", "course_id", "course_name", "race_date", "scheduled_off_utc",
@@ -555,7 +632,6 @@ def parse_sp_csv_to_duckdb(csv_path: Path) -> dict[str, Any]:
     finally:
         con.close()
 
-    done_marker.write_text(datetime.now(UTC).isoformat(), encoding="utf-8")
     return {
         "file": str(csv_path),
         "status": "parsed",
@@ -815,15 +891,27 @@ def main() -> None:
     run_started = time.time()
     download_rows: list[dict[str, Any]] = []
     parse_rows: list[dict[str, Any]] = []
+    sp_checkpoint = _load_sp_checkpoint() if args.use_sp_history else {}
 
     if args.use_sp_history:
         include_tokens = tuple(token.strip() for token in args.sp_include.split(",") if token.strip())
         if args.scan_existing_sp_csvs and not args.download_only:
             csv_files = sorted((RAW_DIR / "sp_history").rglob("*.csv"))
             for csv_file in csv_files:
+                if _checkpoint_is_current(csv_file, sp_checkpoint):
+                    parse_info = {
+                        "file": str(csv_file),
+                        "status": "skipped_checkpoint",
+                    }
+                    parse_rows.append(parse_info)
+                    print(f"parse {csv_file.name}: skipped_checkpoint")
+                    continue
                 parse_info = parse_sp_csv_to_duckdb(csv_file)
                 parse_rows.append(parse_info)
                 print(f"parse {csv_file.name}: {parse_info['status']}")
+                if parse_info["status"] in {"parsed", "already_parsed"}:
+                    _record_sp_checkpoint(sp_checkpoint, csv_file, parse_info)
+            _save_sp_checkpoint(sp_checkpoint)
         else:
             if not args.parse_only:
                 download_rows = _download_sp_history_files(
@@ -847,9 +935,20 @@ def main() -> None:
                         continue
                     if include_tokens and not any(token.lower() in csv_file.name.lower() for token in include_tokens):
                         continue
+                    if _checkpoint_is_current(csv_file, sp_checkpoint):
+                        parse_info = {
+                            "file": str(csv_file),
+                            "status": "skipped_checkpoint",
+                        }
+                        parse_rows.append(parse_info)
+                        print(f"parse {csv_file.name}: skipped_checkpoint")
+                        continue
                     parse_info = parse_sp_csv_to_duckdb(csv_file)
                     parse_rows.append(parse_info)
                     print(f"parse {csv_file.name}: {parse_info['status']}")
+                    if parse_info["status"] in {"parsed", "already_parsed"}:
+                        _record_sp_checkpoint(sp_checkpoint, csv_file, parse_info)
+                _save_sp_checkpoint(sp_checkpoint)
     elif args.scan_existing_zips and not args.download_only:
         zip_files = sorted(RAW_DIR.rglob("*.zip"))
         for zip_file in zip_files:

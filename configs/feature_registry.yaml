@@ -39,3 +39,27 @@ jockey_is_unknown:
   source_tables: [runners]
   null_policy: "never null - always 0 or 1"
   leakage_risk: NONE
+
+rating_vs_last_win_mark:
+  definition: "Current official rating minus the rating carried in the horse's most recent prior win"
+  source_tables: [runners, horse_history]
+  timestamp_logic: "horse_history.scheduled_off_utc < decision_cutoff_utc"
+  expected_range: "unbounded integer"
+  null_policy: "null for non-handicaps or when no prior win has a recorded official rating"
+  leakage_risk: LOW
+
+rating_vs_best_win_mark:
+  definition: "Current official rating minus the highest official rating carried in any prior win"
+  source_tables: [runners, horse_history]
+  timestamp_logic: "horse_history.scheduled_off_utc < decision_cutoff_utc"
+  expected_range: "unbounded integer"
+  null_policy: "null for non-handicaps or when no prior win has a recorded official rating"
+  leakage_risk: LOW
+
+rating_drop_from_post_win_peak:
+  definition: "Highest official rating after the most recent prior win minus the current official rating"
+  source_tables: [runners, horse_history]
+  timestamp_logic: "all horse_history.scheduled_off_utc values are before decision_cutoff_utc"
+  expected_range: "unbounded integer"
+  null_policy: "null for non-handicaps or when no post-win rating is available"
+  leakage_risk: LOW

@@ -3,8 +3,8 @@ WITH base AS (
     SELECT
         ru.runner_id,
         ru.race_id,
-        COALESCE(NULLIF(TRIM(ru.trainer_name), ''), 'Unknown') AS trainer_name_norm,
-        lower(normalise_course(ra.course_name)) AS course_key,
+        ru.trainer_name_norm,
+        ra.course_key,
         ra.going_code,
         ra.distance_furlongs,
         ra.decision_cutoff_utc,
@@ -14,8 +14,8 @@ WITH base AS (
 ),
 hist AS (
     SELECT
-        COALESCE(NULLIF(TRIM(th.trainer_name), ''), 'Unknown') AS trainer_name_norm,
-        lower(normalise_course(ra.course_name)) AS course_key,
+        th.trainer_name_norm,
+        ra.course_key,
         th.going_code,
         th.distance_furlongs,
         th.days_since_last_run,

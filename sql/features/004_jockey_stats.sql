@@ -3,9 +3,9 @@ WITH base AS (
     SELECT
         ru.runner_id,
         ru.race_id,
-        COALESCE(NULLIF(TRIM(ru.jockey_name), ''), 'Unknown') AS jockey_name_norm,
-        COALESCE(NULLIF(TRIM(ru.trainer_name), ''), 'Unknown') AS trainer_name_norm,
-        lower(normalise_course(ra.course_name)) AS course_key,
+        ru.jockey_name_norm,
+        ru.trainer_name_norm,
+        ra.course_key,
         ra.distance_furlongs,
         ra.decision_cutoff_utc,
         CASE WHEN COALESCE(NULLIF(TRIM(ru.jockey_name), ''), 'Unknown') = 'Unknown' THEN 1 ELSE 0 END AS jockey_is_unknown
@@ -14,9 +14,9 @@ WITH base AS (
 ),
 hist AS (
     SELECT
-        COALESCE(NULLIF(TRIM(jh.jockey_name), ''), 'Unknown') AS jockey_name_norm,
-        COALESCE(NULLIF(TRIM(th.trainer_name), ''), 'Unknown') AS trainer_name_norm,
-        lower(normalise_course(ra.course_name)) AS course_key,
+        jh.jockey_name_norm,
+        th.trainer_name_norm,
+        ra.course_key,
         ra.distance_furlongs AS hist_distance,
         jh.scheduled_off_utc,
         CASE WHEN jh.won THEN 1.0 ELSE 0.0 END AS won_num

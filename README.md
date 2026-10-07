@@ -31,11 +31,34 @@ python -m src.modeling.train_split --flat-v2
 python -m src.modeling.train_split --flat-v2 --walk-forward
 
 # Daily predictions (requires Betfair API credentials)
+# Daily scoring rebuilds only the recent feature window (14 days by default).
+# The full historical rebuild remains available for training or maintenance.
 python -m src.pipelines.daily_predictions --date tomorrow
 python -m src.pipelines.daily_predictions --date tomorrow --flat
 python -m src.pipelines.daily_predictions --date tomorrow --jumps
 python -m src.pipelines.daily_predictions --date tomorrow --min-edge 0.12
 ```
+
+Daily scoring updates `trainer_history`, `jockey_history`, and the feature store
+incrementally. The recent window includes late Racing Post result/RPR corrections;
+run `run_phase2_feature_store` when a complete historical rebuild is required.
+Daily pipeline logs include elapsed time for each major stage and each feature SQL
+phase. Full data-quality and leakage checks remain enabled for the standalone
+historical rebuild, but are not run during daily incremental scoring.
+
+SP-history ingestion keeps a durable manifest at
+`data/raw/betfair_historical/sp_history/.ingestion_checkpoint.json`. Each processed
+CSV is recorded with its file size, modification timestamp, processing timestamp,
+and import counts. Unchanged files are skipped; a changed file is parsed again.
+Imported race IDs are queued in `ingestion_changed_races`, and the daily feature
+update uses that queue for trainer/jockey history upserts before removing the
+successfully rebuilt IDs.
+
+Database connections persist normalized course, trainer, and jockey join keys so
+feature SQL does not repeatedly call Python normalization functions over the
+large history tables. Optional DuckDB tuning is available through
+`RACING_DUCKDB_THREADS`, `RACING_DUCKDB_MEMORY_LIMIT`, and
+`RACING_DUCKDB_TEMP_DIRECTORY`; unset values keep DuckDB's defaults.
 
 ## Data Sources
 
@@ -51,6 +74,9 @@ python -m src.pipelines.daily_predictions --date tomorrow --min-edge 0.12
 - Horse form: weighted form, form trend, place rates, speed figures, RPR, beaten lengths
 - Class: class delta, prize money, handicap flag
 - Ratings/weight: official rating vs field, weight vs field, weight change
+- Rating trajectory in handicap races only: current mark versus the horse's previous
+  winning marks, including any rise after that win and subsequent drop from the
+  post-win peak
 - Race context: field size, distance, pace pressure, race class, going
 - Draw: position, field percentile, course+going bias coefficient
 - Connections: trainer/jockey win rates (90d, course, distance, going, combo)

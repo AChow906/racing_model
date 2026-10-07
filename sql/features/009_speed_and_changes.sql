@@ -135,7 +135,7 @@ trainer_14d AS (
     FROM base b
     JOIN runners ru ON ru.runner_id = b.runner_id
     JOIN trainer_history th
-        ON COALESCE(NULLIF(TRIM(th.trainer_name), ''), 'Unknown') = COALESCE(NULLIF(TRIM(ru.trainer_name), ''), 'Unknown')
+        ON th.trainer_name_norm = ru.trainer_name_norm
        AND th.scheduled_off_utc < b.decision_cutoff_utc
        AND th.scheduled_off_utc >= b.decision_cutoff_utc - INTERVAL 14 DAY
     GROUP BY 1

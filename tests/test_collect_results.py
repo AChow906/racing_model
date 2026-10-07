@@ -1,8 +1,8 @@
 from datetime import date
 from pathlib import Path
 
-from pipelines.collect_results import update_results_in_db
 from ingestion.db_connect import get_db
+from pipelines.collect_results import update_results_in_db
 
 
 def test_updates_duplicate_horse_names_by_event_id(tmp_path):

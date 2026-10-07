@@ -1,238 +1,932 @@
 {
-  "flat": [
-    {
-      "label": "Test 2022",
-      "train_rows": 430393,
-      "test_rows": 73485,
-      "test_races": 7756,
-      "top_pick": 0.28455389375966994,
-      "brier": 0.08625280235689703,
-      "best_iter": 258,
-      "value": {
-        "edge_3": {
-          "bets": 24143,
-          "strike": 0.06150851178395394,
-          "roi": 0.04581536524525802,
-          "pnl": 1106.1203631162643
-        },
-        "edge_5": {
-          "bets": 13401,
-          "strike": 0.06596522647563614,
-          "roi": 0.055181545870009306,
-          "pnl": 739.4878962039948
-        },
-        "edge_10": {
-          "bets": 2054,
-          "strike": 0.10321324245374879,
-          "roi": 0.24378129477161975,
-          "pnl": 500.726779460907
+  "baseline": {
+    "flat": [
+      {
+        "label": "Test 2022",
+        "train_rows": 430393,
+        "test_rows": 73485,
+        "test_races": 7756,
+        "top_pick": 0.2973182052604435,
+        "brier": 0.08490527930358556,
+        "best_iter": 936,
+        "feature_count": 72,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 19514,
+            "strike": 0.08009634108844932,
+            "roi": 0.0008280716482899259,
+            "pnl": 16.158990144729614
+          },
+          "edge_5": {
+            "bets": 10060,
+            "strike": 0.09423459244532803,
+            "roi": 0.07364740576706161,
+            "pnl": 740.8929020166397
+          },
+          "edge_10": {
+            "bets": 1810,
+            "strike": 0.16464088397790055,
+            "roi": 0.3632568706465031,
+            "pnl": 657.4949358701706
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 506567,
+        "test_rows": 74157,
+        "test_races": 7767,
+        "top_pick": 0.2784859018926226,
+        "brier": 0.08583330533914604,
+        "best_iter": 757,
+        "feature_count": 72,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 19988,
+            "strike": 0.07529517710626375,
+            "roi": -0.008641161762620775,
+            "pnl": -172.71954131126404
+          },
+          "edge_5": {
+            "bets": 10057,
+            "strike": 0.09008650691060953,
+            "roi": 0.0172169492651765,
+            "pnl": 173.15085875988007
+          },
+          "edge_10": {
+            "bets": 1930,
+            "strike": 0.12590673575129532,
+            "roi": 0.07306895867530545,
+            "pnl": 141.02309024333954
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 580052,
+        "test_rows": 74787,
+        "test_races": 7822,
+        "top_pick": 0.2845819483508054,
+        "brier": 0.08624306880308175,
+        "best_iter": 295,
+        "feature_count": 72,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 24451,
+            "strike": 0.05570324322113615,
+            "roi": -0.0390963764416114,
+            "pnl": -955.9455003738403
+          },
+          "edge_5": {
+            "bets": 12361,
+            "strike": 0.06350618881967478,
+            "roi": 0.054197535353969886,
+            "pnl": 669.9357345104218
+          },
+          "edge_10": {
+            "bets": 1604,
+            "strike": 0.11970074812967581,
+            "roi": 0.23569108616384188,
+            "pnl": 378.04850220680237
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 654209,
+        "test_rows": 84777,
+        "test_races": 9106,
+        "top_pick": 0.28827146936086095,
+        "brier": 0.08691861652756912,
+        "best_iter": 573,
+        "feature_count": 72,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 25001,
+            "strike": 0.07151713931442742,
+            "roi": 0.030881411289912234,
+            "pnl": 772.0661636590958
+          },
+          "edge_5": {
+            "bets": 13394,
+            "strike": 0.08294758847245035,
+            "roi": 0.09162991596403915,
+            "pnl": 1227.2910944223404
+          },
+          "edge_10": {
+            "bets": 2431,
+            "strike": 0.12093788564376799,
+            "roi": 0.1452434146320903,
+            "pnl": 353.0867409706116
+          }
         }
       }
-    },
-    {
-      "label": "Test 2023",
-      "train_rows": 506567,
-      "test_rows": 74157,
-      "test_races": 7767,
-      "top_pick": 0.2657396678254152,
-      "brier": 0.0868966892942865,
-      "best_iter": 277,
-      "value": {
-        "edge_3": {
-          "bets": 24543,
-          "strike": 0.06123945727906124,
-          "roi": 0.10381091672682613,
-          "pnl": 2547.831329226494
-        },
-        "edge_5": {
-          "bets": 13536,
-          "strike": 0.06375591016548464,
-          "roi": 0.10562393784382101,
-          "pnl": 1429.7256226539612
-        },
-        "edge_10": {
-          "bets": 2113,
-          "strike": 0.09654519640321817,
-          "roi": 0.26393468747813725,
-          "pnl": 557.693994641304
+    ],
+    "jumps": [
+      {
+        "label": "Test 2022",
+        "train_rows": 279798,
+        "test_rows": 47695,
+        "test_races": 5335,
+        "top_pick": 0.32652296157450794,
+        "brier": 0.0876097289771945,
+        "best_iter": 507,
+        "feature_count": 57,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 14233,
+            "strike": 0.07616103421625799,
+            "roi": 0.0530441060786856,
+            "pnl": 754.9767618179321
+          },
+          "edge_5": {
+            "bets": 7877,
+            "strike": 0.08658118573060809,
+            "roi": 0.05916110245243492,
+            "pnl": 466.0120040178299
+          },
+          "edge_10": {
+            "bets": 1778,
+            "strike": 0.12429696287964004,
+            "roi": 0.07876245256752211,
+            "pnl": 140.03964066505432
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 332142,
+        "test_rows": 46960,
+        "test_races": 5121,
+        "top_pick": 0.3157586408904511,
+        "brier": 0.08767000108245497,
+        "best_iter": 165,
+        "feature_count": 57,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 17551,
+            "strike": 0.05219075836134693,
+            "roi": 0.007943483813387275,
+            "pnl": 139.41608440876007
+          },
+          "edge_5": {
+            "bets": 9707,
+            "strike": 0.05676316060574843,
+            "roi": -0.017135589427580557,
+            "pnl": -166.33516657352448
+          },
+          "edge_10": {
+            "bets": 1691,
+            "strike": 0.07273802483737433,
+            "roi": 0.03307486214911282,
+            "pnl": 55.92959189414978
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 379837,
+        "test_rows": 46830,
+        "test_races": 4991,
+        "top_pick": 0.3221799238629533,
+        "brier": 0.08429815871291106,
+        "best_iter": 866,
+        "feature_count": 57,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 13097,
+            "strike": 0.07765137054287241,
+            "roi": 0.014512970673816754,
+            "pnl": 190.07637691497803
+          },
+          "edge_5": {
+            "bets": 7106,
+            "strike": 0.09034618632141853,
+            "roi": 0.060773596943448104,
+            "pnl": 431.8571798801422
+          },
+          "edge_10": {
+            "bets": 1699,
+            "strike": 0.11653914067098294,
+            "roi": 0.07161346690103262,
+            "pnl": 121.67128026485443
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 426797,
+        "test_rows": 58660,
+        "test_races": 6589,
+        "top_pick": 0.3278190924267719,
+        "brier": 0.0877765250184908,
+        "best_iter": 427,
+        "feature_count": 57,
+        "rating_trajectory_mode": "none",
+        "rating_trajectory_importance": {},
+        "value": {
+          "edge_3": {
+            "bets": 18166,
+            "strike": 0.07101178024881646,
+            "roi": -0.015645331680466265,
+            "pnl": -284.21309530735016
+          },
+          "edge_5": {
+            "bets": 10251,
+            "strike": 0.07930933567456834,
+            "roi": -6.322174139248896e-05,
+            "pnl": -0.6480860710144043
+          },
+          "edge_10": {
+            "bets": 2212,
+            "strike": 0.11211573236889692,
+            "roi": 0.09077351681793792,
+            "pnl": 200.7910192012787
+          }
         }
       }
-    },
-    {
-      "label": "Test 2024",
-      "train_rows": 580052,
-      "test_rows": 74787,
-      "test_races": 7822,
-      "top_pick": 0.27601636410125285,
-      "brier": 0.08626912414054004,
-      "best_iter": 392,
-      "value": {
-        "edge_3": {
-          "bets": 24405,
-          "strike": 0.06240524482687974,
-          "roi": 0.058814519298196304,
-          "pnl": 1435.3683434724808
+    ]
+  },
+  "with_rating_trajectory": {
+    "flat": [
+      {
+        "label": "Test 2022",
+        "train_rows": 430393,
+        "test_rows": 73485,
+        "test_races": 7756,
+        "top_pick": 0.29834966477565755,
+        "brier": 0.08488492727211126,
+        "best_iter": 917,
+        "feature_count": 80,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 473,
+          "best_win_official_rating": 438,
+          "peak_rating_since_last_win": 431,
+          "rating_vs_last_win_mark": 336,
+          "rating_vs_best_win_mark": 359,
+          "rating_drop_from_post_win_peak": 404,
+          "rating_rise_after_last_win": 378,
+          "days_since_last_win": 874
         },
-        "edge_5": {
-          "bets": 13149,
-          "strike": 0.06677313864172181,
-          "roi": 0.05638737597477482,
-          "pnl": 741.4376066923141
+        "value": {
+          "edge_3": {
+            "bets": 19404,
+            "strike": 0.08163265306122448,
+            "roi": 0.03364632399862168,
+            "pnl": 652.8732708692551
+          },
+          "edge_5": {
+            "bets": 9945,
+            "strike": 0.09763700351935646,
+            "roi": 0.05797543934447613,
+            "pnl": 576.5657442808151
+          },
+          "edge_10": {
+            "bets": 1875,
+            "strike": 0.1648,
+            "roi": 0.29688316059112546,
+            "pnl": 556.6559261083603
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 506567,
+        "test_rows": 74157,
+        "test_races": 7767,
+        "top_pick": 0.27964465044418696,
+        "brier": 0.08593344727524041,
+        "best_iter": 614,
+        "feature_count": 80,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 330,
+          "best_win_official_rating": 294,
+          "peak_rating_since_last_win": 256,
+          "rating_vs_last_win_mark": 219,
+          "rating_vs_best_win_mark": 227,
+          "rating_drop_from_post_win_peak": 255,
+          "rating_rise_after_last_win": 195,
+          "days_since_last_win": 601
         },
-        "edge_10": {
-          "bets": 2207,
-          "strike": 0.1010421386497508,
-          "roi": 0.20101808334941718,
-          "pnl": 443.6469099521637
+        "value": {
+          "edge_3": {
+            "bets": 20247,
+            "strike": 0.07334419914061342,
+            "roi": 0.0066583177016188485,
+            "pnl": 134.81095850467682
+          },
+          "edge_5": {
+            "bets": 10151,
+            "strike": 0.08826716579647326,
+            "roi": 0.006422012559933776,
+            "pnl": 65.18984949588776
+          },
+          "edge_10": {
+            "bets": 1934,
+            "strike": 0.12616339193381593,
+            "roi": 0.15098621075994104,
+            "pnl": 292.00733160972595
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 580052,
+        "test_rows": 74787,
+        "test_races": 7822,
+        "top_pick": 0.2872666837126055,
+        "brier": 0.08542375703170796,
+        "best_iter": 777,
+        "feature_count": 80,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 405,
+          "best_win_official_rating": 433,
+          "peak_rating_since_last_win": 389,
+          "rating_vs_last_win_mark": 282,
+          "rating_vs_best_win_mark": 324,
+          "rating_drop_from_post_win_peak": 355,
+          "rating_rise_after_last_win": 266,
+          "days_since_last_win": 779
+        },
+        "value": {
+          "edge_3": {
+            "bets": 21023,
+            "strike": 0.07349093849593302,
+            "roi": 0.02485410161098438,
+            "pnl": 522.5077781677246
+          },
+          "edge_5": {
+            "bets": 10483,
+            "strike": 0.08938281026423733,
+            "roi": 0.12970329271431336,
+            "pnl": 1359.679617524147
+          },
+          "edge_10": {
+            "bets": 1910,
+            "strike": 0.1518324607329843,
+            "roi": 0.26441669782418853,
+            "pnl": 505.03589284420013
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 654209,
+        "test_rows": 84777,
+        "test_races": 9106,
+        "top_pick": 0.29189545354711177,
+        "brier": 0.08674088085898586,
+        "best_iter": 827,
+        "feature_count": 80,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 463,
+          "best_win_official_rating": 458,
+          "peak_rating_since_last_win": 370,
+          "rating_vs_last_win_mark": 316,
+          "rating_vs_best_win_mark": 344,
+          "rating_drop_from_post_win_peak": 370,
+          "rating_rise_after_last_win": 282,
+          "days_since_last_win": 869
+        },
+        "value": {
+          "edge_3": {
+            "bets": 24127,
+            "strike": 0.07651179176855805,
+            "roi": 0.049915287583299314,
+            "pnl": 1204.3061435222626
+          },
+          "edge_5": {
+            "bets": 13052,
+            "strike": 0.08473797119215445,
+            "roi": 0.06261646358505772,
+            "pnl": 817.2700827121735
+          },
+          "edge_10": {
+            "bets": 2533,
+            "strike": 0.13778128701144887,
+            "roi": 0.17493706713351534,
+            "pnl": 443.11559104919434
+          }
         }
       }
-    },
-    {
-      "label": "Test 2025-26",
-      "train_rows": 654209,
-      "test_rows": 83724,
-      "test_races": 9013,
-      "top_pick": 0.27648951514479086,
-      "brier": 0.08855635619994198,
-      "best_iter": 452,
-      "value": {
-        "edge_3": {
-          "bets": 26339,
-          "strike": 0.07266790690610882,
-          "roi": 0.07941549347239849,
-          "pnl": 2091.724682569504
+    ],
+    "jumps": [
+      {
+        "label": "Test 2022",
+        "train_rows": 279798,
+        "test_rows": 47695,
+        "test_races": 5335,
+        "top_pick": 0.32427366447985007,
+        "brier": 0.08817410568284562,
+        "best_iter": 302,
+        "feature_count": 65,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 132,
+          "best_win_official_rating": 165,
+          "peak_rating_since_last_win": 150,
+          "rating_vs_last_win_mark": 104,
+          "rating_vs_best_win_mark": 111,
+          "rating_drop_from_post_win_peak": 107,
+          "rating_rise_after_last_win": 125,
+          "days_since_last_win": 460
         },
-        "edge_5": {
-          "bets": 15913,
-          "strike": 0.07628982592848614,
-          "roi": 0.08800526118657565,
-          "pnl": 1400.4277212619781
+        "value": {
+          "edge_3": {
+            "bets": 15394,
+            "strike": 0.06781863063531246,
+            "roi": 0.09018728743749299,
+            "pnl": 1388.343102812767
+          },
+          "edge_5": {
+            "bets": 8640,
+            "strike": 0.07222222222222222,
+            "roi": 0.02647766557832559,
+            "pnl": 228.7670305967331
+          },
+          "edge_10": {
+            "bets": 1807,
+            "strike": 0.1079136690647482,
+            "roi": 0.2377861450572138,
+            "pnl": 429.6795641183853
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 332142,
+        "test_rows": 46960,
+        "test_races": 5121,
+        "top_pick": 0.3345049794961921,
+        "brier": 0.08503771825238965,
+        "best_iter": 734,
+        "feature_count": 65,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 427,
+          "best_win_official_rating": 418,
+          "peak_rating_since_last_win": 374,
+          "rating_vs_last_win_mark": 339,
+          "rating_vs_best_win_mark": 343,
+          "rating_drop_from_post_win_peak": 327,
+          "rating_rise_after_last_win": 344,
+          "days_since_last_win": 930
         },
-        "edge_10": {
-          "bets": 3514,
-          "strike": 0.10159362549800798,
-          "roi": 0.24860104553795837,
-          "pnl": 873.5840740203857
+        "value": {
+          "edge_3": {
+            "bets": 13353,
+            "strike": 0.08455028832472104,
+            "roi": 0.07126442494039222,
+            "pnl": 951.5938662290573
+          },
+          "edge_5": {
+            "bets": 6949,
+            "strike": 0.09871924017844294,
+            "roi": 0.0390942396577579,
+            "pnl": 271.66587138175964
+          },
+          "edge_10": {
+            "bets": 1580,
+            "strike": 0.13734177215189874,
+            "roi": 0.0672143807894067,
+            "pnl": 106.19872164726257
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 379837,
+        "test_rows": 46830,
+        "test_races": 4991,
+        "top_pick": 0.32157884191544783,
+        "brier": 0.08429449405292994,
+        "best_iter": 689,
+        "feature_count": 65,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 367,
+          "best_win_official_rating": 367,
+          "peak_rating_since_last_win": 341,
+          "rating_vs_last_win_mark": 306,
+          "rating_vs_best_win_mark": 335,
+          "rating_drop_from_post_win_peak": 324,
+          "rating_rise_after_last_win": 302,
+          "days_since_last_win": 895
+        },
+        "value": {
+          "edge_3": {
+            "bets": 13200,
+            "strike": 0.07651515151515151,
+            "roi": 0.028698087208198778,
+            "pnl": 378.8147511482239
+          },
+          "edge_5": {
+            "bets": 7218,
+            "strike": 0.08783596564145192,
+            "roi": 0.03954585867266339,
+            "pnl": 285.44200789928436
+          },
+          "edge_10": {
+            "bets": 1667,
+            "strike": 0.11997600479904019,
+            "roi": 0.12537284882825223,
+            "pnl": 208.99653899669647
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 426797,
+        "test_rows": 58660,
+        "test_races": 6589,
+        "top_pick": 0.3370769464258613,
+        "brier": 0.08722183520732257,
+        "best_iter": 826,
+        "feature_count": 65,
+        "rating_trajectory_mode": "all_races",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 468,
+          "best_win_official_rating": 460,
+          "peak_rating_since_last_win": 416,
+          "rating_vs_last_win_mark": 355,
+          "rating_vs_best_win_mark": 414,
+          "rating_drop_from_post_win_peak": 354,
+          "rating_rise_after_last_win": 372,
+          "days_since_last_win": 1017
+        },
+        "value": {
+          "edge_3": {
+            "bets": 16862,
+            "strike": 0.08261178982327126,
+            "roi": 0.0048541327612126595,
+            "pnl": 81.85038661956787
+          },
+          "edge_5": {
+            "bets": 9431,
+            "strike": 0.09574806489237621,
+            "roi": 0.03391267110403719,
+            "pnl": 319.8304011821747
+          },
+          "edge_10": {
+            "bets": 2308,
+            "strike": 0.13301559792027728,
+            "roi": 0.04972270864547849,
+            "pnl": 114.76001155376434
+          }
         }
       }
-    }
-  ],
-  "jumps": [
-    {
-      "label": "Test 2022",
-      "train_rows": 279798,
-      "test_rows": 47695,
-      "test_races": 5335,
-      "top_pick": 0.31152764761012186,
-      "brier": 0.08822717013793042,
-      "best_iter": 310,
-      "value": {
-        "edge_3": {
-          "bets": 15811,
-          "strike": 0.07311365505028145,
-          "roi": 0.17173571304927837,
-          "pnl": 2715.3133590221405
+    ]
+  },
+  "handicap_only_rating_trajectory": {
+    "flat": [
+      {
+        "label": "Test 2022",
+        "train_rows": 430393,
+        "test_rows": 73485,
+        "test_races": 7756,
+        "top_pick": 0.2982207323362558,
+        "brier": 0.08491619263724334,
+        "best_iter": 727,
+        "feature_count": 80,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 352,
+          "best_win_official_rating": 349,
+          "peak_rating_since_last_win": 300,
+          "rating_vs_last_win_mark": 306,
+          "rating_vs_best_win_mark": 292,
+          "rating_drop_from_post_win_peak": 279,
+          "rating_rise_after_last_win": 237,
+          "days_since_last_win": 724
         },
-        "edge_5": {
-          "bets": 9543,
-          "strike": 0.08236403646651996,
-          "roi": 0.2826419149718794,
-          "pnl": 2697.251794576645
+        "value": {
+          "edge_3": {
+            "bets": 19570,
+            "strike": 0.07812979049565662,
+            "roi": -0.009758303819655397,
+            "pnl": -190.97000575065613
+          },
+          "edge_5": {
+            "bets": 9985,
+            "strike": 0.09334001001502254,
+            "roi": 0.047529614658193345,
+            "pnl": 474.58320236206055
+          },
+          "edge_10": {
+            "bets": 1830,
+            "strike": 0.16120218579234974,
+            "roi": 0.32969558675432464,
+            "pnl": 603.3429237604141
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 506567,
+        "test_rows": 74157,
+        "test_races": 7767,
+        "top_pick": 0.2760396549504313,
+        "brier": 0.0859381970572123,
+        "best_iter": 634,
+        "feature_count": 80,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 373,
+          "best_win_official_rating": 314,
+          "peak_rating_since_last_win": 258,
+          "rating_vs_last_win_mark": 195,
+          "rating_vs_best_win_mark": 248,
+          "rating_drop_from_post_win_peak": 261,
+          "rating_rise_after_last_win": 211,
+          "days_since_last_win": 692
         },
-        "edge_10": {
-          "bets": 2297,
-          "strike": 0.10970831519373095,
-          "roi": 0.3669551769235002,
-          "pnl": 842.89604139328
+        "value": {
+          "edge_3": {
+            "bets": 20183,
+            "strike": 0.07337858593866126,
+            "roi": -0.009137229003229611,
+            "pnl": -184.41669297218323
+          },
+          "edge_5": {
+            "bets": 10128,
+            "strike": 0.08994865718799368,
+            "roi": 0.040929566474416625,
+            "pnl": 414.53464925289154
+          },
+          "edge_10": {
+            "bets": 1952,
+            "strike": 0.12807377049180327,
+            "roi": 0.0905728500763901,
+            "pnl": 176.79820334911346
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 580052,
+        "test_rows": 74787,
+        "test_races": 7822,
+        "top_pick": 0.28880081820506265,
+        "brier": 0.08542898010366558,
+        "best_iter": 789,
+        "feature_count": 80,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 487,
+          "best_win_official_rating": 440,
+          "peak_rating_since_last_win": 325,
+          "rating_vs_last_win_mark": 294,
+          "rating_vs_best_win_mark": 329,
+          "rating_drop_from_post_win_peak": 306,
+          "rating_rise_after_last_win": 277,
+          "days_since_last_win": 865
+        },
+        "value": {
+          "edge_3": {
+            "bets": 21047,
+            "strike": 0.07231434408704328,
+            "roi": 0.016220824499959905,
+            "pnl": 341.3996932506561
+          },
+          "edge_5": {
+            "bets": 10436,
+            "strike": 0.08738980452280568,
+            "roi": 0.12015188071589764,
+            "pnl": 1253.9050271511078
+          },
+          "edge_10": {
+            "bets": 1881,
+            "strike": 0.15311004784688995,
+            "roi": 0.2348356826200186,
+            "pnl": 441.725919008255
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 654209,
+        "test_rows": 84777,
+        "test_races": 9106,
+        "top_pick": 0.2891500109817703,
+        "brier": 0.08680223623967875,
+        "best_iter": 843,
+        "feature_count": 80,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 549,
+          "best_win_official_rating": 490,
+          "peak_rating_since_last_win": 335,
+          "rating_vs_last_win_mark": 360,
+          "rating_vs_best_win_mark": 350,
+          "rating_drop_from_post_win_peak": 360,
+          "rating_rise_after_last_win": 293,
+          "days_since_last_win": 900
+        },
+        "value": {
+          "edge_3": {
+            "bets": 24230,
+            "strike": 0.07461824184894758,
+            "roi": 0.016722789713040493,
+            "pnl": 405.19319474697113
+          },
+          "edge_5": {
+            "bets": 13110,
+            "strike": 0.08596491228070176,
+            "roi": 0.08354096776378873,
+            "pnl": 1095.2220873832703
+          },
+          "edge_10": {
+            "bets": 2623,
+            "strike": 0.13495996950057187,
+            "roi": 0.22465352256744361,
+            "pnl": 589.2661896944046
+          }
         }
       }
-    },
-    {
-      "label": "Test 2023",
-      "train_rows": 332142,
-      "test_rows": 46960,
-      "test_races": 5121,
-      "top_pick": 0.32024995118140986,
-      "brier": 0.08558614333061382,
-      "best_iter": 626,
-      "value": {
-        "edge_3": {
-          "bets": 13801,
-          "strike": 0.0852112165785088,
-          "roi": 0.10482339294619616,
-          "pnl": 1446.6676460504532
+    ],
+    "jumps": [
+      {
+        "label": "Test 2022",
+        "train_rows": 279798,
+        "test_rows": 47695,
+        "test_races": 5335,
+        "top_pick": 0.32652296157450794,
+        "brier": 0.08767686895852658,
+        "best_iter": 423,
+        "feature_count": 65,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 263,
+          "best_win_official_rating": 310,
+          "peak_rating_since_last_win": 183,
+          "rating_vs_last_win_mark": 178,
+          "rating_vs_best_win_mark": 163,
+          "rating_drop_from_post_win_peak": 161,
+          "rating_rise_after_last_win": 136,
+          "days_since_last_win": 616
         },
-        "edge_5": {
-          "bets": 8134,
-          "strike": 0.09577083845586427,
-          "roi": 0.15675222381256945,
-          "pnl": 1275.0225884914398
+        "value": {
+          "edge_3": {
+            "bets": 14573,
+            "strike": 0.07246277362245249,
+            "roi": 0.04900829009018986,
+            "pnl": 714.1978114843369
+          },
+          "edge_5": {
+            "bets": 8017,
+            "strike": 0.0853186977672446,
+            "roi": 0.11475618355170411,
+            "pnl": 920.0003235340118
+          },
+          "edge_10": {
+            "bets": 1774,
+            "strike": 0.12344983089064261,
+            "roi": 0.12753871442768996,
+            "pnl": 226.25367939472198
+          }
+        }
+      },
+      {
+        "label": "Test 2023",
+        "train_rows": 332142,
+        "test_rows": 46960,
+        "test_races": 5121,
+        "top_pick": 0.3264987307166569,
+        "brier": 0.08564195887393487,
+        "best_iter": 438,
+        "feature_count": 65,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 312,
+          "best_win_official_rating": 303,
+          "peak_rating_since_last_win": 166,
+          "rating_vs_last_win_mark": 163,
+          "rating_vs_best_win_mark": 169,
+          "rating_drop_from_post_win_peak": 177,
+          "rating_rise_after_last_win": 143,
+          "days_since_last_win": 658
         },
-        "edge_10": {
-          "bets": 2113,
-          "strike": 0.12257453857075248,
-          "roi": 0.22776212356014947,
-          "pnl": 481.2613670825958
+        "value": {
+          "edge_3": {
+            "bets": 14042,
+            "strike": 0.07420595356786783,
+            "roi": 0.01857136542463282,
+            "pnl": 260.7791132926941
+          },
+          "edge_5": {
+            "bets": 7367,
+            "strike": 0.08768833989412243,
+            "roi": 0.09676047364681922,
+            "pnl": 712.8344093561172
+          },
+          "edge_10": {
+            "bets": 1518,
+            "strike": 0.12055335968379446,
+            "roi": 0.07809651565488933,
+            "pnl": 118.55051076412201
+          }
+        }
+      },
+      {
+        "label": "Test 2024",
+        "train_rows": 379837,
+        "test_rows": 46830,
+        "test_races": 4991,
+        "top_pick": 0.3149669404928872,
+        "brier": 0.08471400507482202,
+        "best_iter": 427,
+        "feature_count": 65,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 271,
+          "best_win_official_rating": 293,
+          "peak_rating_since_last_win": 171,
+          "rating_vs_last_win_mark": 142,
+          "rating_vs_best_win_mark": 159,
+          "rating_drop_from_post_win_peak": 165,
+          "rating_rise_after_last_win": 155,
+          "days_since_last_win": 648
+        },
+        "value": {
+          "edge_3": {
+            "bets": 13826,
+            "strike": 0.06900043396499349,
+            "roi": -0.010321259765881594,
+            "pnl": -142.70173752307892
+          },
+          "edge_5": {
+            "bets": 7830,
+            "strike": 0.0768837803320562,
+            "roi": 0.02721518055841536,
+            "pnl": 213.09486377239227
+          },
+          "edge_10": {
+            "bets": 1620,
+            "strike": 0.11358024691358025,
+            "roi": 0.1016985516489288,
+            "pnl": 164.75165367126465
+          }
+        }
+      },
+      {
+        "label": "Test 2025-26",
+        "train_rows": 426797,
+        "test_rows": 58660,
+        "test_races": 6589,
+        "top_pick": 0.33100622249203215,
+        "brier": 0.08723900648813035,
+        "best_iter": 797,
+        "feature_count": 65,
+        "rating_trajectory_mode": "handicap_only",
+        "rating_trajectory_importance": {
+          "last_win_official_rating": 540,
+          "best_win_official_rating": 556,
+          "peak_rating_since_last_win": 406,
+          "rating_vs_last_win_mark": 349,
+          "rating_vs_best_win_mark": 381,
+          "rating_drop_from_post_win_peak": 360,
+          "rating_rise_after_last_win": 354,
+          "days_since_last_win": 1063
+        },
+        "value": {
+          "edge_3": {
+            "bets": 16957,
+            "strike": 0.0812054018989208,
+            "roi": 0.0041810301471207865,
+            "pnl": 70.89772820472717
+          },
+          "edge_5": {
+            "bets": 9405,
+            "strike": 0.09569377990430622,
+            "roi": 0.053014174311291594,
+            "pnl": 498.59830939769745
+          },
+          "edge_10": {
+            "bets": 2282,
+            "strike": 0.13365468886941279,
+            "roi": 0.08550965885234234,
+            "pnl": 195.13304150104523
+          }
         }
       }
-    },
-    {
-      "label": "Test 2024",
-      "train_rows": 379837,
-      "test_rows": 46830,
-      "test_races": 4991,
-      "top_pick": 0.30234421959527147,
-      "brier": 0.08467603263561901,
-      "best_iter": 593,
-      "value": {
-        "edge_3": {
-          "bets": 14444,
-          "strike": 0.07934090279700914,
-          "roi": 0.14599502437400608,
-          "pnl": 2108.7521320581436
-        },
-        "edge_5": {
-          "bets": 8577,
-          "strike": 0.08790952547510784,
-          "roi": 0.13736365167247092,
-          "pnl": 1178.168040394783
-        },
-        "edge_10": {
-          "bets": 2142,
-          "strike": 0.10550887021475257,
-          "roi": -0.006259648906750505,
-          "pnl": -13.408167958259583
-        }
-      }
-    },
-    {
-      "label": "Test 2025-26",
-      "train_rows": 426797,
-      "test_rows": 58238,
-      "test_races": 6546,
-      "top_pick": 0.295905896730828,
-      "brier": 0.08997670442851831,
-      "best_iter": 202,
-      "value": {
-        "edge_3": {
-          "bets": 20255,
-          "strike": 0.06502098247346334,
-          "roi": 0.06032644350479868,
-          "pnl": 1221.9121131896973
-        },
-        "edge_5": {
-          "bets": 12676,
-          "strike": 0.0665825181445251,
-          "roi": 0.07478281493516478,
-          "pnl": 947.9469621181488
-        },
-        "edge_10": {
-          "bets": 2897,
-          "strike": 0.07594062823610631,
-          "roi": -0.028894745525838098,
-          "pnl": -83.70807778835297
-        }
-      }
-    }
-  ]
+    ]
+  }
 }

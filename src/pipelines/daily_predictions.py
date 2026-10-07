@@ -57,7 +57,9 @@ JUMPS_COURSES = [
 def get_betfair_client():
     """Create and login Betfair API client."""
     import betfairlightweight
-    cert_file = Path(os.environ["BETFAIR_CERT_FILE"])
+    cert_file = Path(os.environ["BETFAIR_CERT_FILE"]).expanduser()
+    if not cert_file.is_absolute():
+        cert_file = ROOT / cert_file
     client = betfairlightweight.APIClient(
         username=os.environ["BETFAIR_USERNAME"],
         password=os.environ["BETFAIR_PASSWORD"],
@@ -253,23 +255,18 @@ def insert_into_db(races, runners, target_date):
     return len(races), len(runners)
 
 
-def rebuild_features():
-    """Rebuild feature store including new data."""
+def rebuild_features(target_date: date, lookback_days: int = 14):
+    """Rebuild and merge the recent feature window used by daily scoring."""
     con = get_db(str(ROOT / "racing.duckdb"))
 
     from quality.checks import ensure_standard_race_flag
     ensure_standard_race_flag(con)
 
-    from pipelines.run_phase2_feature_store import _materialize_feature_store, _prepare_upstream_inputs
-    _prepare_upstream_inputs(con)
-
-    for sql_file in sorted(os.listdir(ROOT / "sql" / "features")):
-        if sql_file.endswith(".sql"):
-            con.execute((ROOT / "sql" / "features" / sql_file).read_text())
-
-    rows = _materialize_feature_store(con)
-    con.close()
-    return rows
+    from pipelines.run_phase2_feature_store import rebuild_feature_window
+    try:
+        return rebuild_feature_window(con, target_date, lookback_days)
+    finally:
+        con.close()
 
 
 def load_model(category, params="tuned"):
@@ -713,8 +710,8 @@ def main():
             print(f"  No racecard JSON for {target_date} (scoring with Betfair data only)", flush=True)
 
         if not args.skip_rebuild:
-            print("Rebuilding feature store (this takes a few minutes)...", flush=True)
-            rows = rebuild_features()
+            print("Rebuilding recent feature window (14 days)...", flush=True)
+            rows = rebuild_features(target_date)
             print(f"  Feature store: {rows:,} rows", flush=True)
 
     # Fetch live exchange odds
